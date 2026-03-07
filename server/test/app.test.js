@@ -204,6 +204,79 @@ describe('API', () => {
     ]);
   });
 
+  it('returns a discoverable people feed for authenticated users', async () => {
+    const authClient = createMockSupabaseClient();
+    authClient.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+          email: 'ada@example.com'
+        }
+      },
+      error: null
+    });
+
+    const requestClient = {
+      rpc: vi.fn().mockImplementation((fn) => {
+        if (fn === 'list_discoverable_people') {
+          return Promise.resolve({
+            data: [
+              {
+                id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+                full_name: 'Maya Chen',
+                avatar_path: '5ba6c5b5-5341-4638-a164-a3b0f9b88447/avatar',
+                bio: 'Frontend builder looking for climate-tech teams.',
+                skills: ['React', 'Supabase'],
+                created_at: '2026-03-07T18:00:00.000Z',
+                email: 'maya@example.com',
+                projects: [
+                  {
+                    id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+                    name: 'Pulse',
+                    theme: 'Hackathon'
+                  }
+                ]
+              }
+            ],
+            error: null
+          });
+        }
+
+        throw new Error(`Unexpected rpc: ${fn}`);
+      })
+    };
+
+    const app = createApp({
+      env,
+      authClientFactory: () => authClient,
+      requestClientFactory: () => requestClient
+    });
+
+    const response = await request(app)
+      .get('/api/v1/people')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(response.status).toBe(200);
+    expect(requestClient.rpc).toHaveBeenCalledWith('list_discoverable_people');
+    expect(response.body).toEqual([
+      {
+        id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+        fullName: 'Maya Chen',
+        avatarUrl: 'https://example.supabase.co/storage/v1/object/public/profile-images/5ba6c5b5-5341-4638-a164-a3b0f9b88447/avatar',
+        bio: 'Frontend builder looking for climate-tech teams.',
+        skills: ['React', 'Supabase'],
+        createdAt: '2026-03-07T18:00:00.000Z',
+        projects: [
+          {
+            id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+            name: 'Pulse',
+            theme: 'Hackathon'
+          }
+        ]
+      }
+    ]);
+  });
+
   it('validates profile updates with nested projects', async () => {
     const authClient = createMockSupabaseClient();
     authClient.auth.getUser.mockResolvedValue({

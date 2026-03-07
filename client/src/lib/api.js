@@ -1,6 +1,7 @@
 import {
   errorResponseSchema,
   meResponseSchema,
+  peopleFeedSchema,
   projectFeedSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
@@ -50,4 +51,9 @@ export async function updateProfile(token, input) {
 export async function getProjectsFeed(token) {
   const payload = await request('/api/v1/projects', { token });
   return projectFeedSchema.parse(payload);
+}
+
+export async function getPeopleFeed(token) {
+  const payload = await request('/api/v1/people', { token });
+  return peopleFeedSchema.parse(payload);
 }
