@@ -1,5 +1,6 @@
 import { Box, Typography } from "@mui/material";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
+import SwipeCardMotion from "./SwipeCardMotion";
 
 const SWIPE_THRESHOLD = 120;
 
@@ -10,16 +11,16 @@ export default function SwipeDeck({
   currentIndex,
   setCurrentIndex,
 }) {
-  const activeItems = items.slice(currentIndex);
+  const visibleItems = items.slice(currentIndex, currentIndex + 3);
 
-  const handleDragEnd = (_, info) => {
+  const handleDragEnd = (_, info, item) => {
     const offsetX = info.offset.x;
 
     if (offsetX > SWIPE_THRESHOLD) {
-      onSwipe?.("right", items[currentIndex]);
+      onSwipe?.("right", item);
       setCurrentIndex((prev) => prev + 1);
     } else if (offsetX < -SWIPE_THRESHOLD) {
-      onSwipe?.("left", items[currentIndex]);
+      onSwipe?.("left", item);
       setCurrentIndex((prev) => prev + 1);
     }
   };
@@ -57,40 +58,20 @@ export default function SwipeDeck({
       }}
     >
       <AnimatePresence>
-        {activeItems
-          .slice(0, 3)
-          .reverse()
-          .map((item, index) => {
-            const isTop = index === activeItems.slice(0, 3).length - 1;
+        {[...visibleItems].reverse().map((item, reverseIndex) => {
+          const isTop = reverseIndex === visibleItems.length - 1;
 
-            return (
-              <motion.div
-                key={item.id}
-                drag={isTop ? "x" : false}
-                dragConstraints={{ left: 0, right: 0 }}
-                onDragEnd={isTop ? handleDragEnd : undefined}
-                initial={{ scale: 0.95, y: 10, opacity: 0 }}
-                animate={{
-                  scale: isTop ? 1 : 0.96 - (activeItems.slice(0, 3).length - 2 - index) * 0.02,
-                  y: isTop ? 0 : (activeItems.slice(0, 3).length - 1 - index) * 10,
-                  opacity: 1,
-                }}
-                exit={{
-                  x: 0,
-                  opacity: 0,
-                  transition: { duration: 0.2 },
-                }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                style={{
-                  position: "absolute",
-                  width: "100%",
-                  cursor: isTop ? "grab" : "default",
-                }}
-              >
-                {renderCard(item, isTop)}
-              </motion.div>
-            );
-          })}
+          return (
+            <SwipeCardMotion
+              key={item.id}
+              item={item}
+              isTop={isTop}
+              onDragEnd={handleDragEnd}
+            >
+              {renderCard(item, isTop)}
+            </SwipeCardMotion>
+          );
+        })}
       </AnimatePresence>
     </Box>
   );

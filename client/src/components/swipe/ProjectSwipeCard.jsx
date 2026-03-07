@@ -23,15 +23,15 @@ function getInitials(name = '') {
 export default function ProjectSwipeCard({ project, onOpenSummary }) {
   return (
     <Card
-      elevation={0}
-      sx={{
-        borderRadius: 6,
-        border: '1px solid #e5e7eb',
-        minHeight: 540,
-        backgroundColor: '#fff',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.06)'
-      }}
-    >
+  elevation={0}
+  sx={{
+    borderRadius: 6,
+    border: "1px solid #e5e7eb",
+    minHeight: 540,
+    backgroundColor: "transparent",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+  }}
+>
       <CardContent sx={{ p: 3 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
           <Stack direction="row" spacing={2} alignItems="center">
