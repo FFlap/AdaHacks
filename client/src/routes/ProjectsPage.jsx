@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useState } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import AppShell from '../components/layout/AppShell.jsx';
 import SwipeDeck from '../components/swipe/SwipeDeck';
 import ProjectSwipeCard from '../components/swipe/ProjectSwipeCard';
 import SwipeActionButtons from '../components/swipe/SwipeActionButtons';
@@ -59,45 +60,47 @@ export default function ProjectsPage() {
   };
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" align="center" sx={{ mb: 1 }}>
-        Projects
-      </Typography>
-      <Typography align="center" color="text.secondary" sx={{ mb: 4 }}>
-        Swipe through projects from other builders to find something to join.
-      </Typography>
+    <AppShell>
+      <Box sx={{ p: 4 }}>
+        <Typography variant="h4" align="center" sx={{ mb: 1 }}>
+          Projects
+        </Typography>
+        <Typography align="center" color="text.secondary" sx={{ mb: 4 }}>
+          Swipe through projects from other builders to find something to join.
+        </Typography>
 
-      {status === 'loading' ? (
-        <Box sx={{ mt: 8, display: 'grid', placeItems: 'center', gap: 2 }}>
-          <CircularProgress color="inherit" size={28} />
-          <Typography color="text.secondary">Loading live projects...</Typography>
-        </Box>
-      ) : null}
+        {status === 'loading' ? (
+          <Box sx={{ mt: 8, display: 'grid', placeItems: 'center', gap: 2 }}>
+            <CircularProgress color="inherit" size={28} />
+            <Typography color="text.secondary">Loading live projects...</Typography>
+          </Box>
+        ) : null}
 
-      {status === 'error' ? (
-        <Alert severity="error" sx={{ maxWidth: 420, mx: 'auto' }}>
-          {error}
-        </Alert>
-      ) : null}
+        {status === 'error' ? (
+          <Alert severity="error" sx={{ maxWidth: 420, mx: 'auto' }}>
+            {error}
+          </Alert>
+        ) : null}
 
-      {status === 'ready' ? (
-        <>
-          <SwipeDeck
-            items={projects}
-            currentIndex={currentIndex}
-            setCurrentIndex={setCurrentIndex}
-            onSwipe={handleSwipe}
-            renderCard={(project) => (
-              <ProjectSwipeCard
-                project={project}
-                onOpenSummary={handleOpenSummary}
-              />
-            )}
-          />
+        {status === 'ready' ? (
+          <>
+            <SwipeDeck
+              items={projects}
+              currentIndex={currentIndex}
+              setCurrentIndex={setCurrentIndex}
+              onSwipe={handleSwipe}
+              renderCard={(project) => (
+                <ProjectSwipeCard
+                  project={project}
+                  onOpenSummary={handleOpenSummary}
+                />
+              )}
+            />
 
-          <SwipeActionButtons onPass={handlePass} onLike={handleLike} />
-        </>
-      ) : null}
-    </Box>
+            <SwipeActionButtons onPass={handlePass} onLike={handleLike} />
+          </>
+        ) : null}
+      </Box>
+    </AppShell>
   );
 }

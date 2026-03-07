@@ -20,6 +20,10 @@ vi.mock('../lib/api.js', () => ({
   getProjectsFeed: apiMocks.getProjectsFeed
 }));
 
+vi.mock('../components/layout/AppShell.jsx', () => ({
+  default: ({ children }) => children
+}));
+
 describe('ProjectsPage', () => {
   beforeEach(() => {
     apiMocks.getProjectsFeed.mockReset();
