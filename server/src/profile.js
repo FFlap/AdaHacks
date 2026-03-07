@@ -71,6 +71,12 @@ export async function ensureProfile(client, userId, supabaseUrl) {
   return mapProfileRow(data, supabaseUrl);
 }
 
+export async function loadProfileWithProjects(client, userId, supabaseUrl) {
+  const profile = await ensureProfile(client, userId, supabaseUrl);
+  profile.projects = await listProjects(client, userId);
+  return profile;
+}
+
 function toDisplayName(fullName, email) {
   const normalizedName = fullName?.trim();
 
@@ -124,6 +130,11 @@ export async function listDiscoverableProjects(client, supabaseUrl) {
   }
 
   return data.map((row) => mapProjectFeedRow(row, supabaseUrl));
+}
+
+export async function findDiscoverableProject(client, supabaseUrl, projectId) {
+  const projects = await listDiscoverableProjects(client, supabaseUrl);
+  return projects.find((project) => project.id === projectId) ?? null;
 }
 
 function mapPeopleProjectSummary(project = {}) {

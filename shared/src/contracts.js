@@ -37,6 +37,13 @@ export const projectFeedItemSchema = z.object({
 
 export const projectFeedSchema = z.array(projectFeedItemSchema);
 
+export const projectAnalysisSchema = z.object({
+  projectId: z.uuid(),
+  matchingSkills: z.array(skillSchema).max(16),
+  missingSkills: z.array(skillSchema).max(16),
+  contributionSummary: z.string().trim().min(1).max(600)
+});
+
 export const personProjectSummarySchema = z.object({
   id: z.uuid(),
   name: z.string().trim().min(1).max(80),
