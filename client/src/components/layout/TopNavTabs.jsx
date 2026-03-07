@@ -1,5 +1,6 @@
-import { Paper, Tabs, Tab } from "@mui/material";
+import { Badge, Paper, Tabs, Tab } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useNotifications } from "../../context/useNotifications.js";
 
 const navItems = [
   { label: "Projects", value: "/projects" },
@@ -11,6 +12,7 @@ const navItems = [
 export default function TopNavTabs() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
 
   const currentTab =
     navItems.find((item) => location.pathname.startsWith(item.value))?.value ||
@@ -37,23 +39,48 @@ export default function TopNavTabs() {
           minHeight: 48,
         }}
       >
-        {navItems.map((item) => (
-          <Tab
-            key={item.value}
-            value={item.value}
-            label={item.label}
-            sx={{
-              minHeight: 48,
-              borderRadius: "999px",
-              fontWeight: 600,
-              color: "#374151",
-              "&.Mui-selected": {
-                backgroundColor: "#eef2ff",
-                color: "#4338ca",
-              },
-            }}
-          />
-        ))}
+        {navItems.map((item) => {
+          const isNotificationTab = item.value === "/notifications";
+          return (
+            <Tab
+              key={item.value}
+              value={item.value}
+              label={
+                isNotificationTab && unreadCount > 0 ? (
+                  <Badge
+                    badgeContent={unreadCount}
+                    color="error"
+                    sx={{
+                      "& .MuiBadge-badge": {
+                        right: -8,
+                        top: 8,
+                        fontSize: "0.65rem",
+                        height: 18,
+                        minWidth: 18,
+                        paddingRight: "3px",
+                        paddingLeft: "3px"
+                      }
+                    }}
+                  >
+                    <span>{item.label}</span>
+                  </Badge>
+                ) : (
+                  item.label
+                )
+              }
+              sx={{
+                minHeight: 48,
+                borderRadius: "999px",
+                fontWeight: 600,
+                color: "#374151",
+                "&.Mui-selected": {
+                  backgroundColor: "#eef2ff",
+                  color: "#4338ca",
+                },
+              }}
+            />
+          );
+        })}
       </Tabs>
     </Paper>
   );

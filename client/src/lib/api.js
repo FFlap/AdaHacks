@@ -45,3 +45,9 @@ export async function updateProfile(token, input) {
 
   return meResponseSchema.parse(response);
 }
+
+export async function getProjectsFeed(token) {
+  // TODO: Replace with actual endpoint when backend is ready
+  // For now, return empty array for mock data
+  return [];
+}
