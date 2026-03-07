@@ -41,10 +41,6 @@ export default function PeoplePage() {
     console.log('Swiped:', direction, person);
   };
 
-  const handleOpenSummary = (person) => {
-    console.log('Open summary for:', person);
-  };
-
   const handlePass = () => {
     if (currentIndex < people.length) {
       handleSwipe('left', people[currentIndex]);
@@ -90,10 +86,7 @@ export default function PeoplePage() {
               setCurrentIndex={setCurrentIndex}
               onSwipe={handleSwipe}
               renderCard={(person) => (
-                <PersonSwipeCard
-                  person={person}
-                  onOpenSummary={handleOpenSummary}
-                />
+                <PersonSwipeCard person={person} />
               )}
             />
 
