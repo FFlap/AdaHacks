@@ -1,6 +1,8 @@
 import {
   errorResponseSchema,
   meResponseSchema,
+  peopleFeedSchema,
+  projectFeedSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
 import { env } from './env.js';
@@ -47,7 +49,11 @@ export async function updateProfile(token, input) {
 }
 
 export async function getProjectsFeed(token) {
-  // TODO: Replace with actual endpoint when backend is ready
-  // For now, return empty array for mock data
-  return [];
+  const payload = await request('/api/v1/projects', { token });
+  return projectFeedSchema.parse(payload);
+}
+
+export async function getPeopleFeed(token) {
+  const payload = await request('/api/v1/people', { token });
+  return peopleFeedSchema.parse(payload);
 }

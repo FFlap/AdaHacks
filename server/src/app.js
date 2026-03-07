@@ -4,12 +4,16 @@ import helmet from 'helmet';
 import {
   errorResponseSchema,
   meResponseSchema,
+  peopleFeedSchema,
+  projectFeedSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
 import { getEnv } from './env.js';
 import { HttpError, toErrorResponse } from './errors.js';
 import {
   ensureProfile,
+  listDiscoverablePeople,
+  listDiscoverableProjects,
   listProjects,
   mapProfileRow,
   normalizeSkills,
@@ -107,6 +111,32 @@ export function createApp({
         },
         profile
       });
+
+      response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/v1/projects', async (request, response, next) => {
+    try {
+      const client = request.supabase;
+      const payload = projectFeedSchema.parse(
+        await listDiscoverableProjects(client, env.supabaseUrl)
+      );
+
+      response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/v1/people', async (request, response, next) => {
+    try {
+      const client = request.supabase;
+      const payload = peopleFeedSchema.parse(
+        await listDiscoverablePeople(client, env.supabaseUrl)
+      );
 
       response.json(payload);
     } catch (error) {

@@ -4,9 +4,11 @@ import {
   Card,
   CardContent,
   Chip,
+  IconButton,
   Stack,
   Typography
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 function getInitials(name = '') {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -18,96 +20,106 @@ function getInitials(name = '') {
   return name.slice(0, 2).toUpperCase() || 'P';
 }
 
-export default function PersonSwipeCard({ person }) {
+function formatCreatedAt(value) {
+  return new Date(value).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+}
+
+export default function PersonSwipeCard({ person, onOpenSummary }) {
   return (
     <Card
       elevation={0}
       sx={{
         borderRadius: 6,
         border: '1px solid #e5e7eb',
-        minHeight: 540,
+        minHeight: 560,
         backgroundColor: '#fff',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
-        display: 'flex',
-        flexDirection: 'column'
+        boxShadow: '0 10px 30px rgba(0,0,0,0.06)'
       }}
     >
-      <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Stack spacing={3} sx={{ height: '100%' }}>
-          {/* Avatar and Name */}
-          <Box sx={{ textAlign: 'center' }}>
-            <Avatar
-              src={person.avatarUrl ?? undefined}
-              sx={{
-                width: 100,
-                height: 100,
-                mx: 'auto',
-                mb: 2,
-                fontSize: '2rem'
-              }}
-            >
+      <CardContent sx={{ p: 3 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Avatar src={person.avatarUrl ?? undefined} sx={{ width: 56, height: 56 }}>
               {getInitials(person.fullName)}
             </Avatar>
-            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-              {person.fullName}
-            </Typography>
-          </Box>
 
-          {/* Bio */}
-          {person.bio && (
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-              {person.bio}
-            </Typography>
-          )}
-
-          {/* Skills */}
-          {person.skills && person.skills.length > 0 && (
             <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                Skills
+              <Typography variant="h5">{person.fullName}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Joined {formatCreatedAt(person.createdAt)}
               </Typography>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                {person.skills.map((skill) => (
-                  <Chip key={skill} label={skill} variant="outlined" size="small" />
-                ))}
-              </Stack>
             </Box>
-          )}
+          </Stack>
 
-          {/* Projects */}
-          {person.projects && person.projects.length > 0 && (
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                Projects ({person.projects.length})
-              </Typography>
-              <Stack spacing={1}>
-                {person.projects.slice(0, 2).map((project) => (
-                  <Box
-                    key={project.id}
-                    sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      border: '1px solid #e5e7eb',
-                      backgroundColor: '#f9fafb'
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                      {project.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {project.description ? project.description.substring(0, 50) + '...' : 'No description'}
-                    </Typography>
-                  </Box>
-                ))}
-                {person.projects.length > 2 && (
-                  <Typography variant="caption" color="text.secondary">
-                    +{person.projects.length - 2} more project{person.projects.length - 2 !== 1 ? 's' : ''}
-                  </Typography>
-                )}
-              </Stack>
-            </Box>
-          )}
+          <IconButton onClick={() => onOpenSummary?.(person)}>
+            <InfoOutlinedIcon />
+          </IconButton>
         </Stack>
+
+        <Typography sx={{ mt: 3 }} color="text.secondary">
+          {person.bio || 'No bio added yet.'}
+        </Typography>
+
+        <Box
+          sx={{
+            mt: 3,
+            p: 2,
+            borderRadius: 4,
+            border: '1px solid #e5e7eb',
+            backgroundColor: '#f9fafb'
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Tech stack
+          </Typography>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            {person.skills.length ? (
+              person.skills.map((skill) => (
+                <Chip key={skill} label={skill} variant="outlined" />
+              ))
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                No stack listed yet.
+              </Typography>
+            )}
+          </Stack>
+        </Box>
+
+        <Box
+          sx={{
+            mt: 2,
+            p: 2,
+            borderRadius: 4,
+            border: '1px solid #e5e7eb',
+            backgroundColor: '#fff'
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Projects
+          </Typography>
+          {person.projects.length ? (
+            <Stack spacing={1.25}>
+              {person.projects.map((project) => (
+                <Box key={project.id} sx={{ display: 'grid', gap: 0.25 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    {project.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {project.theme || 'Theme pending'}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No projects added yet.
+            </Typography>
+          )}
+        </Box>
       </CardContent>
     </Card>
   );
