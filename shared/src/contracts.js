@@ -1,9 +1,17 @@
 import { z } from 'zod';
 
+export const skillSchema = z
+  .string()
+  .trim()
+  .min(1, 'Skills cannot be empty.')
+  .max(32, 'Each skill must be 32 characters or fewer.');
+
 export const profileSchema = z.object({
   id: z.uuid(),
   fullName: z.string().trim().max(80),
   bio: z.string().trim().max(280),
+  avatarUrl: z.url().nullable(),
+  skills: z.array(skillSchema).max(16),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true })
 });
@@ -17,7 +25,14 @@ export const updateProfileInputSchema = z.object({
   bio: z
     .string()
     .trim()
-    .max(280, 'Bio must be 280 characters or fewer.')
+    .max(280, 'Bio must be 280 characters or fewer.'),
+  avatarPath: z
+    .string()
+    .trim()
+    .min(1, 'Avatar path is required when provided.')
+    .max(256, 'Avatar path must be 256 characters or fewer.')
+    .optional(),
+  skills: z.array(skillSchema).max(16, 'Add 16 skills or fewer.')
 });
 
 export const userSchema = z.object({

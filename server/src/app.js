@@ -8,7 +8,12 @@ import {
 } from '@adahacks/shared/contracts';
 import { getEnv } from './env.js';
 import { HttpError, toErrorResponse } from './errors.js';
-import { ensureProfile, mapProfileRow } from './profile.js';
+import {
+  ensureProfile,
+  mapProfileRow,
+  normalizeSkills,
+  profileColumns
+} from './profile.js';
 import { createAuthClient, createRequestClient } from './supabase.js';
 
 function isAllowedOrigin(origin, configuredOrigin) {
@@ -91,7 +96,7 @@ export function createApp({
     try {
       const { user } = request.auth;
       const client = request.supabase;
-      const profile = await ensureProfile(client, user.id);
+      const profile = await ensureProfile(client, user.id, env.supabaseUrl);
       const payload = meResponseSchema.parse({
         user: {
           id: user.id,
@@ -111,16 +116,23 @@ export function createApp({
       const { user } = request.auth;
       const client = request.supabase;
       const input = updateProfileInputSchema.parse(request.body);
+      const nextProfile = {
+        id: user.id,
+        full_name: input.fullName,
+        bio: input.bio,
+        skills: normalizeSkills(input.skills)
+      };
+
+      if (input.avatarPath !== undefined) {
+        nextProfile.avatar_path = input.avatarPath;
+      }
+
       const { data, error } = await client
         .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: input.fullName,
-          bio: input.bio
-        }, {
+        .upsert(nextProfile, {
           onConflict: 'id'
         })
-        .select('id, full_name, bio, created_at, updated_at')
+        .select(profileColumns)
         .single();
 
       if (error) {
@@ -132,7 +144,7 @@ export function createApp({
           id: user.id,
           email: user.email
         },
-        profile: mapProfileRow(data)
+        profile: mapProfileRow(data, env.supabaseUrl)
       });
 
       response.json(payload);

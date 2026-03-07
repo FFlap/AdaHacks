@@ -50,6 +50,8 @@ describe('API', () => {
                 id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
                 full_name: 'Ada Lovelace',
                 bio: 'Analytical engine enthusiast',
+                avatar_path: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar',
+                skills: ['React', 'Supabase'],
                 created_at: '2026-03-07T18:00:00.000Z',
                 updated_at: '2026-03-07T18:05:00.000Z'
               },
@@ -73,6 +75,8 @@ describe('API', () => {
     expect(response.status).toBe(200);
     expect(response.body.user.email).toBe('ada@example.com');
     expect(response.body.profile.fullName).toBe('Ada Lovelace');
+    expect(response.body.profile.avatarUrl).toContain('/profile-images/34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar');
+    expect(response.body.profile.skills).toEqual(['React', 'Supabase']);
   });
 
   it('validates profile updates', async () => {
@@ -98,7 +102,8 @@ describe('API', () => {
       .set('Authorization', 'Bearer valid-token')
       .send({
         fullName: 'Ada',
-        bio: 'x'.repeat(500)
+        bio: 'x'.repeat(500),
+        skills: []
       });
 
     expect(response.status).toBe(400);
@@ -126,6 +131,8 @@ describe('API', () => {
                 id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
                 full_name: 'Ada Byron',
                 bio: 'First programmer',
+                avatar_path: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar',
+                skills: ['React', 'Supabase', 'Node.js'],
                 created_at: '2026-03-07T18:00:00.000Z',
                 updated_at: '2026-03-07T18:10:00.000Z'
               },
@@ -147,11 +154,14 @@ describe('API', () => {
       .set('Authorization', 'Bearer valid-token')
       .send({
         fullName: 'Ada Byron',
-        bio: 'First programmer'
+        bio: 'First programmer',
+        avatarPath: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar',
+        skills: ['React', 'Supabase', 'Node.js']
       });
 
     expect(response.status).toBe(200);
     expect(response.body.profile.bio).toBe('First programmer');
     expect(response.body.profile.id).toBe('34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620');
+    expect(response.body.profile.skills).toEqual(['React', 'Supabase', 'Node.js']);
   });
 });
