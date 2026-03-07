@@ -49,7 +49,10 @@ export default function ProjectSwipeCard({ project, onOpenSummary }) {
             </Box>
           </Stack>
 
-          <IconButton onClick={() => onOpenSummary?.(project)}>
+          <IconButton
+            aria-label={`Open project analysis for ${project.name}`}
+            onClick={() => onOpenSummary?.(project)}
+          >
             <InfoOutlinedIcon />
           </IconButton>
         </Stack>

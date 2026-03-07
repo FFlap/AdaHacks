@@ -4,11 +4,9 @@ import {
   Card,
   CardContent,
   Chip,
-  IconButton,
   Stack,
   Typography
 } from '@mui/material';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 function getInitials(name = '') {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -28,7 +26,7 @@ function formatCreatedAt(value) {
   });
 }
 
-export default function PersonSwipeCard({ person, onOpenSummary }) {
+export default function PersonSwipeCard({ person }) {
   return (
     <Card
   elevation={0}
@@ -41,23 +39,17 @@ export default function PersonSwipeCard({ person, onOpenSummary }) {
   }}
 >
       <CardContent sx={{ p: 3 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar src={person.avatarUrl ?? undefined} sx={{ width: 56, height: 56 }}>
-              {getInitials(person.fullName)}
-            </Avatar>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar src={person.avatarUrl ?? undefined} sx={{ width: 56, height: 56 }}>
+            {getInitials(person.fullName)}
+          </Avatar>
 
-            <Box>
-              <Typography variant="h5">{person.fullName}</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                Joined {formatCreatedAt(person.createdAt)}
-              </Typography>
-            </Box>
-          </Stack>
-
-          <IconButton onClick={() => onOpenSummary?.(person)}>
-            <InfoOutlinedIcon />
-          </IconButton>
+          <Box>
+            <Typography variant="h5">{person.fullName}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Joined {formatCreatedAt(person.createdAt)}
+            </Typography>
+          </Box>
         </Stack>
 
         <Typography sx={{ mt: 3 }} color="text.secondary">

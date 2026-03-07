@@ -25,7 +25,11 @@
    SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
    CLIENT_ORIGIN=http://localhost:5173
    PORT=4010
+   OPENROUTER_API_KEY=your-openrouter-api-key
+   OPENROUTER_MODEL=arcee-ai/trinity-large-preview:free
    ```
+
+   `OPENROUTER_API_KEY` is server-only. Do not expose it via a `VITE_*` variable.
 
 4. Link your hosted Supabase project and push the repo migration:
 
@@ -63,6 +67,15 @@ npm run dev
 - API: `http://localhost:4010`
 
 If Vite starts on a different port such as `5174`, update `CLIENT_ORIGIN` in the root `.env` to match it before testing profile saves.
+
+## AI Project Match
+
+- The project card info button on `/projects` calls `POST /api/v1/projects/:projectId/analysis`.
+- The server sends the signed-in user’s skills plus their own saved projects to OpenRouter and returns:
+  - matching skills
+  - missing skills
+  - a contribution summary
+- If you rotate the OpenRouter key, update the root `.env` and restart `npm run dev`.
 
 ## Commands
 

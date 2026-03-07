@@ -1,11 +1,12 @@
 import { useEffect, useEffectEvent, useState } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import AppShell from '../components/layout/AppShell.jsx';
+import ProjectAnalysisDialog from '../components/swipe/ProjectAnalysisDialog.jsx';
 import SwipeDeck from '../components/swipe/SwipeDeck';
 import ProjectSwipeCard from '../components/swipe/ProjectSwipeCard';
 import SwipeActionButtons from '../components/swipe/SwipeActionButtons';
 import { useAuth } from '../context/useAuth.js';
-import { getProjectsFeed } from '../lib/api.js';
+import { analyzeProject, getProjectsFeed } from '../lib/api.js';
 
 export default function ProjectsPage() {
   const { session } = useAuth();
@@ -13,6 +14,14 @@ export default function ProjectsPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
+  const [analysisCache, setAnalysisCache] = useState({});
+  const [analysisState, setAnalysisState] = useState({
+    open: false,
+    project: null,
+    status: 'idle',
+    data: null,
+    error: ''
+  });
 
   const loadProjects = useEffectEvent(async () => {
     if (!session?.access_token) {
@@ -41,8 +50,70 @@ export default function ProjectsPage() {
     console.log('Swiped:', direction, item);
   };
 
+  async function openProjectAnalysis(project, options = {}) {
+    if (!project || !session?.access_token) {
+      return;
+    }
+
+    const cachedAnalysis = analysisCache[project.id];
+
+    if (cachedAnalysis && !options.force) {
+      setAnalysisState({
+        open: true,
+        project,
+        status: 'ready',
+        data: cachedAnalysis,
+        error: ''
+      });
+      return;
+    }
+
+    setAnalysisState({
+      open: true,
+      project,
+      status: 'loading',
+      data: null,
+      error: ''
+    });
+
+    try {
+      const response = await analyzeProject(session.access_token, project.id);
+
+      setAnalysisCache((current) => ({
+        ...current,
+        [project.id]: response
+      }));
+      setAnalysisState({
+        open: true,
+        project,
+        status: 'ready',
+        data: response,
+        error: ''
+      });
+    } catch (analysisError) {
+      setAnalysisState({
+        open: true,
+        project,
+        status: 'error',
+        data: null,
+        error: analysisError.message
+      });
+    }
+  }
+
   const handleOpenSummary = (project) => {
-    console.log('Open summary for:', project);
+    openProjectAnalysis(project);
+  };
+
+  const handleCloseSummary = () => {
+    setAnalysisState((current) => ({
+      ...current,
+      open: false
+    }));
+  };
+
+  const handleRetrySummary = () => {
+    openProjectAnalysis(analysisState.project, { force: true });
   };
 
   const handlePass = () => {
@@ -100,6 +171,16 @@ export default function ProjectsPage() {
             <SwipeActionButtons onPass={handlePass} onLike={handleLike} />
           </>
         ) : null}
+
+        <ProjectAnalysisDialog
+          open={analysisState.open}
+          project={analysisState.project}
+          status={analysisState.status}
+          analysis={analysisState.data}
+          error={analysisState.error}
+          onClose={handleCloseSummary}
+          onRetry={handleRetrySummary}
+        />
       </Box>
     </AppShell>
   );
