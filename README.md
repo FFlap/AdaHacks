@@ -37,6 +37,7 @@
 
    That push now creates:
    - the `profiles` columns for `avatar_path` and `skills`
+   - the `projects` table used by the profile page project cards
    - the public `profile-images` storage bucket
    - storage policies so each user can upload only their own avatar file
 
