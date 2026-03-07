@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useEffectEvent, useState } from 'react';
+import AppShell from '../components/layout/AppShell.jsx';
 import { getMe, updateProfile } from '../lib/api.js';
 import { avatarAccept, uploadAvatar, validateAvatarFile } from '../lib/profileMedia.js';
 import { useAuth } from '../context/useAuth.js';
@@ -320,315 +321,317 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="shell">
-      <section className="profile-layout">
-        <aside className="card profile-side">
-          <p className="brand-mark">AdaHacks</p>
-          <p className="eyebrow">Session boundary</p>
-          <div className="profile-side__identity">
-            <div className="profile-side__avatar" aria-hidden="true">
-              {liveAvatarUrl ? <img alt="" src={liveAvatarUrl} /> : <span>{initials}</span>}
-            </div>
-            <div>
-              <p className="profile-side__name">{displayName || 'Complete your profile'}</p>
-              <p className="profile-side__email">{data?.user.email ?? session.user.email}</p>
-            </div>
-          </div>
-          <div className="profile-side__skills" aria-label="Current tech stack and frameworks">
-            {form.skills.length ? (
-              form.skills.map((skill) => (
-                <span className="chip chip--static" key={skill}>
-                  {skill}
-                </span>
-              ))
-            ) : (
-              <span className="profile-side__empty">No stack listed yet</span>
-            )}
-          </div>
-          <section className="profile-side__projects">
-            <p className="profile-side__section-label">Projects</p>
-            {form.projects.length ? (
-              <div className="profile-side__project-list">
-                {form.projects.map((project, index) => (
-                  <article className="profile-side__project" key={project.uiKey}>
-                    <p>{project.name || `Project ${String(index + 1).padStart(2, '0')}`}</p>
-                    <span>{project.theme || 'Theme pending'}</span>
-                  </article>
-                ))}
+    <AppShell>
+      <div className="shell">
+        <section className="profile-layout">
+          <aside className="card profile-side">
+            <p className="brand-mark">AdaHacks</p>
+            <p className="eyebrow">Session boundary</p>
+            <div className="profile-side__identity">
+              <div className="profile-side__avatar" aria-hidden="true">
+                {liveAvatarUrl ? <img alt="" src={liveAvatarUrl} /> : <span>{initials}</span>}
               </div>
-            ) : (
-              <p className="profile-side__empty">No projects added yet</p>
-            )}
-          </section>
-          <dl className="meta-list">
-            <div>
-              <dt>Profile created</dt>
-              <dd>{formatTimestamp(data?.profile.createdAt)}</dd>
+              <div>
+                <p className="profile-side__name">{displayName || 'Complete your profile'}</p>
+                <p className="profile-side__email">{data?.user.email ?? session.user.email}</p>
+              </div>
             </div>
-            <div>
-              <dt>Last update</dt>
-              <dd>{formatTimestamp(data?.profile.updatedAt)}</dd>
+            <div className="profile-side__skills" aria-label="Current tech stack and frameworks">
+              {form.skills.length ? (
+                form.skills.map((skill) => (
+                  <span className="chip chip--static" key={skill}>
+                    {skill}
+                  </span>
+                ))
+              ) : (
+                <span className="profile-side__empty">No stack listed yet</span>
+              )}
             </div>
-          </dl>
-          <button className="button button--secondary" type="button" onClick={() => signOut()}>
-            Sign out
-          </button>
-        </aside>
-        <div className="card profile-main">
-          <div aria-label="Profile editor sections" className="editor-tabs" role="tablist">
-            <button
-              aria-controls="profile-panel"
-              aria-selected={activeEditorTab === 'profile'}
-              className={`editor-tab ${activeEditorTab === 'profile' ? 'is-active' : ''}`}
-              id="profile-tab"
-              onClick={() => setActiveEditorTab('profile')}
-              role="tab"
-              type="button"
-            >
-              Profile
-            </button>
-            <button
-              aria-controls="projects-panel"
-              aria-selected={activeEditorTab === 'projects'}
-              className={`editor-tab ${activeEditorTab === 'projects' ? 'is-active' : ''}`}
-              id="projects-tab"
-              onClick={() => setActiveEditorTab('projects')}
-              role="tab"
-              type="button"
-            >
-              Projects
-            </button>
-          </div>
-          <p className="eyebrow">Profile</p>
-          <h2>{activeEditorTab === 'profile' ? 'Profile details' : 'Project list'}</h2>
-          <p className="lede">
-            {activeEditorTab === 'profile'
-              ? 'Add your avatar, write a short bio, and keep one clean list for your stack.'
-              : 'Keep project entries separate from the base profile so the editor stays easier to scan.'}
-          </p>
-          {loading ? (
-            <div className="loading-panel">Pulling profile data from the API.</div>
-          ) : (
-            <form className="stack" onSubmit={handleSubmit}>
-              {activeEditorTab === 'profile' ? (
-                <div
-                  aria-labelledby="profile-tab"
-                  className="editor-panel"
-                  id="profile-panel"
-                  role="tabpanel"
-                >
-                  <section className="profile-section">
-                    <div className="field">
-                      <span>Profile picture</span>
-                      <div className="avatar-field">
-                        <div className="avatar-field__preview" aria-hidden="true">
-                          {liveAvatarUrl ? <img alt="" src={liveAvatarUrl} /> : <span>{initials}</span>}
-                        </div>
-                        <div className="avatar-field__body">
-                          <label className="button button--secondary button--inline" htmlFor="avatar-upload">
-                            {avatarFile ? 'Replace photo' : 'Upload photo'}
-                          </label>
-                          <input
-                            accept={avatarAccept}
-                            aria-label="Profile picture"
-                            className="sr-only"
-                            id="avatar-upload"
-                            name="avatar"
-                            onChange={handleAvatarChange}
-                            type="file"
-                          />
-                          <p className="field-note">PNG, JPG, or WebP. Up to 2 MB.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-                  <label className="field">
-                    <span>Full name</span>
-                    <input
-                      name="fullName"
-                      value={form.fullName}
-                      onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
-                      required
-                    />
-                  </label>
-                  <div className="field">
-                    <span>Tech stack &amp; frameworks</span>
-                    <div className="skill-composer">
-                      <input
-                        aria-label="Tech stack & frameworks"
-                        name="skills"
-                        placeholder="Add React, Node.js, Supabase, Tailwind..."
-                        value={skillInput}
-                        onChange={(event) => setSkillInput(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ',') {
-                            event.preventDefault();
-                            addSkill();
-                          }
-                        }}
-                      />
-                      <button
-                        className="button button--secondary button--inline"
-                        onClick={() => addSkill()}
-                        type="button"
-                      >
-                        Add
-                      </button>
-                    </div>
-                    <div className="chip-list">
-                      {form.skills.length ? (
-                        form.skills.map((skill) => (
-                          <button
-                            className="chip"
-                            key={skill}
-                            onClick={() => removeSkill(skill)}
-                            type="button"
-                          >
-                            <span>{skill}</span>
-                            <span aria-hidden="true">×</span>
-                          </button>
-                        ))
-                      ) : (
-                        <p className="field-note">Add the tools and frameworks you want visible on the card.</p>
-                      )}
-                    </div>
-                  </div>
-                  <label className="field">
-                    <span>Bio</span>
-                    <textarea
-                      name="bio"
-                      rows="6"
-                      value={form.bio}
-                      onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
-                      required
-                    />
-                  </label>
+            <section className="profile-side__projects">
+              <p className="profile-side__section-label">Projects</p>
+              {form.projects.length ? (
+                <div className="profile-side__project-list">
+                  {form.projects.map((project, index) => (
+                    <article className="profile-side__project" key={project.uiKey}>
+                      <p>{project.name || `Project ${String(index + 1).padStart(2, '0')}`}</p>
+                      <span>{project.theme || 'Theme pending'}</span>
+                    </article>
+                  ))}
                 </div>
               ) : (
-                <section
-                  aria-labelledby="projects-tab"
-                  className="editor-panel profile-section profile-section--projects"
-                  id="projects-panel"
-                  role="tabpanel"
-                >
-                  <div className="section-heading">
-                    <div>
-                      <p className="eyebrow">Projects</p>
-                      <p className="section-copy">Add the projects you want attached to this profile.</p>
-                    </div>
-                    <button className="button button--secondary button--inline" onClick={addProject} type="button">
-                      Add project
-                    </button>
-                  </div>
-                  {form.projects.length ? (
-                    <div className="project-stack">
-                      {form.projects.map((project, index) => (
-                        <article className="project-card" key={project.uiKey}>
-                          <div className="project-card__header">
-                            <div>
-                              <p className="project-card__eyebrow">Project {String(index + 1).padStart(2, '0')}</p>
-                              <p className="project-card__title">{project.name || 'Untitled project'}</p>
-                            </div>
+                <p className="profile-side__empty">No projects added yet</p>
+              )}
+            </section>
+            <dl className="meta-list">
+              <div>
+                <dt>Profile created</dt>
+                <dd>{formatTimestamp(data?.profile.createdAt)}</dd>
+              </div>
+              <div>
+                <dt>Last update</dt>
+                <dd>{formatTimestamp(data?.profile.updatedAt)}</dd>
+              </div>
+            </dl>
+            <button className="button button--secondary" type="button" onClick={() => signOut()}>
+              Sign out
+            </button>
+          </aside>
+          <div className="card profile-main">
+            <div aria-label="Profile editor sections" className="editor-tabs" role="tablist">
+              <button
+                aria-controls="profile-panel"
+                aria-selected={activeEditorTab === 'profile'}
+                className={`editor-tab ${activeEditorTab === 'profile' ? 'is-active' : ''}`}
+                id="profile-tab"
+                onClick={() => setActiveEditorTab('profile')}
+                role="tab"
+                type="button"
+              >
+                Profile
+              </button>
+              <button
+                aria-controls="projects-panel"
+                aria-selected={activeEditorTab === 'projects'}
+                className={`editor-tab ${activeEditorTab === 'projects' ? 'is-active' : ''}`}
+                id="projects-tab"
+                onClick={() => setActiveEditorTab('projects')}
+                role="tab"
+                type="button"
+              >
+                Projects
+              </button>
+            </div>
+            <p className="eyebrow">Profile</p>
+            <h2>{activeEditorTab === 'profile' ? 'Profile details' : 'Project list'}</h2>
+            <p className="lede">
+              {activeEditorTab === 'profile'
+                ? 'Add your avatar, write a short bio, and keep one clean list for your stack.'
+                : 'Keep project entries separate from the base profile so the editor stays easier to scan.'}
+            </p>
+            {loading ? (
+              <div className="loading-panel">Pulling profile data from the API.</div>
+            ) : (
+              <form className="stack" onSubmit={handleSubmit}>
+                {activeEditorTab === 'profile' ? (
+                  <div
+                    aria-labelledby="profile-tab"
+                    className="editor-panel"
+                    id="profile-panel"
+                    role="tabpanel"
+                  >
+                    <section className="profile-section">
+                      <div className="field">
+                        <span>Profile picture</span>
+                        <div className="avatar-field">
+                          <div className="avatar-field__preview" aria-hidden="true">
+                            {liveAvatarUrl ? <img alt="" src={liveAvatarUrl} /> : <span>{initials}</span>}
+                          </div>
+                          <div className="avatar-field__body">
+                            <label className="button button--secondary button--inline" htmlFor="avatar-upload">
+                              {avatarFile ? 'Replace photo' : 'Upload photo'}
+                            </label>
+                            <input
+                              accept={avatarAccept}
+                              aria-label="Profile picture"
+                              className="sr-only"
+                              id="avatar-upload"
+                              name="avatar"
+                              onChange={handleAvatarChange}
+                              type="file"
+                            />
+                            <p className="field-note">PNG, JPG, or WebP. Up to 2 MB.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <label className="field">
+                      <span>Full name</span>
+                      <input
+                        name="fullName"
+                        value={form.fullName}
+                        onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
+                        required
+                      />
+                    </label>
+                    <div className="field">
+                      <span>Tech stack &amp; frameworks</span>
+                      <div className="skill-composer">
+                        <input
+                          aria-label="Tech stack & frameworks"
+                          name="skills"
+                          placeholder="Add React, Node.js, Supabase, Tailwind..."
+                          value={skillInput}
+                          onChange={(event) => setSkillInput(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ',') {
+                              event.preventDefault();
+                              addSkill();
+                            }
+                          }}
+                        />
+                        <button
+                          className="button button--secondary button--inline"
+                          onClick={() => addSkill()}
+                          type="button"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      <div className="chip-list">
+                        {form.skills.length ? (
+                          form.skills.map((skill) => (
                             <button
-                              className="button button--secondary button--inline"
-                              onClick={() => removeProject(project.uiKey)}
+                              className="chip"
+                              key={skill}
+                              onClick={() => removeSkill(skill)}
                               type="button"
                             >
-                              Remove
+                              <span>{skill}</span>
+                              <span aria-hidden="true">×</span>
                             </button>
-                          </div>
-                          <div className="project-grid">
-                            <label className="field">
-                              <span>Project name</span>
-                              <input
-                                aria-label={`Project ${index + 1} name`}
-                                value={project.name}
-                                onChange={(event) => updateProjectField(project.uiKey, 'name', event.target.value)}
-                                required
-                              />
-                            </label>
-                            <label className="field">
-                              <span>Theme</span>
-                              <input
-                                aria-label={`Project ${index + 1} theme`}
-                                placeholder="Hackathon, climate, fintech..."
-                                value={project.theme}
-                                onChange={(event) => updateProjectField(project.uiKey, 'theme', event.target.value)}
-                              />
-                            </label>
-                          </div>
-                          <div className="field">
-                            <span>Tech stack</span>
-                            <div className="skill-composer">
-                              <input
-                                aria-label={`Project ${index + 1} tech stack`}
-                                placeholder="Add React, Supabase, Expo..."
-                                value={project.techInput}
-                                onChange={(event) => updateProjectField(project.uiKey, 'techInput', event.target.value)}
-                                onKeyDown={(event) => {
-                                  if (event.key === 'Enter' || event.key === ',') {
-                                    event.preventDefault();
-                                    addProjectTechStack(project.uiKey);
-                                  }
-                                }}
-                              />
+                          ))
+                        ) : (
+                          <p className="field-note">Add the tools and frameworks you want visible on the card.</p>
+                        )}
+                      </div>
+                    </div>
+                    <label className="field">
+                      <span>Bio</span>
+                      <textarea
+                        name="bio"
+                        rows="6"
+                        value={form.bio}
+                        onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
+                        required
+                      />
+                    </label>
+                  </div>
+                ) : (
+                  <section
+                    aria-labelledby="projects-tab"
+                    className="editor-panel profile-section profile-section--projects"
+                    id="projects-panel"
+                    role="tabpanel"
+                  >
+                    <div className="section-heading">
+                      <div>
+                        <p className="eyebrow">Projects</p>
+                        <p className="section-copy">Add the projects you want attached to this profile.</p>
+                      </div>
+                      <button className="button button--secondary button--inline" onClick={addProject} type="button">
+                        Add project
+                      </button>
+                    </div>
+                    {form.projects.length ? (
+                      <div className="project-stack">
+                        {form.projects.map((project, index) => (
+                          <article className="project-card" key={project.uiKey}>
+                            <div className="project-card__header">
+                              <div>
+                                <p className="project-card__eyebrow">Project {String(index + 1).padStart(2, '0')}</p>
+                                <p className="project-card__title">{project.name || 'Untitled project'}</p>
+                              </div>
                               <button
                                 className="button button--secondary button--inline"
-                                onClick={() => addProjectTechStack(project.uiKey)}
+                                onClick={() => removeProject(project.uiKey)}
                                 type="button"
                               >
-                                Add
+                                Remove
                               </button>
                             </div>
-                            <div className="chip-list">
-                              {project.techStack.length ? (
-                                project.techStack.map((stackItem) => (
-                                  <button
-                                    className="chip"
-                                    key={`${project.uiKey}-${stackItem}`}
-                                    onClick={() => removeProjectTechStack(project.uiKey, stackItem)}
-                                    type="button"
-                                  >
-                                    <span>{stackItem}</span>
-                                    <span aria-hidden="true">×</span>
-                                  </button>
-                                ))
-                              ) : (
-                                <p className="field-note">Add the languages, tools, and frameworks used here.</p>
-                              )}
+                            <div className="project-grid">
+                              <label className="field">
+                                <span>Project name</span>
+                                <input
+                                  aria-label={`Project ${index + 1} name`}
+                                  value={project.name}
+                                  onChange={(event) => updateProjectField(project.uiKey, 'name', event.target.value)}
+                                  required
+                                />
+                              </label>
+                              <label className="field">
+                                <span>Theme</span>
+                                <input
+                                  aria-label={`Project ${index + 1} theme`}
+                                  placeholder="Hackathon, climate, fintech..."
+                                  value={project.theme}
+                                  onChange={(event) => updateProjectField(project.uiKey, 'theme', event.target.value)}
+                                />
+                              </label>
                             </div>
-                          </div>
-                          <label className="field">
-                            <span>Description</span>
-                            <textarea
-                              aria-label={`Project ${index + 1} description`}
-                              rows="4"
-                              placeholder="What does it do and why does it matter?"
-                              value={project.description}
-                              onChange={(event) => updateProjectField(project.uiKey, 'description', event.target.value)}
-                            />
-                          </label>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="empty-projects">
-                      <p>No projects added yet.</p>
-                      <span>Start with one strong project card and build out from there.</span>
-                    </div>
-                  )}
-                </section>
-              )}
-              {avatarNotice ? <p className="notice notice--success">{avatarNotice}</p> : null}
-              {notice ? <p className="notice notice--success">{notice}</p> : null}
-              {error ? <p className="notice notice--error">{error}</p> : null}
-              <button className="button" disabled={saving} type="submit">
-                {saving ? (avatarFile ? 'Uploading and saving...' : 'Saving...') : 'Save profile'}
-              </button>
-            </form>
-          )}
-        </div>
-      </section>
-    </div>
+                            <div className="field">
+                              <span>Tech stack</span>
+                              <div className="skill-composer">
+                                <input
+                                  aria-label={`Project ${index + 1} tech stack`}
+                                  placeholder="Add React, Supabase, Expo..."
+                                  value={project.techInput}
+                                  onChange={(event) => updateProjectField(project.uiKey, 'techInput', event.target.value)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ',') {
+                                      event.preventDefault();
+                                      addProjectTechStack(project.uiKey);
+                                    }
+                                  }}
+                                />
+                                <button
+                                  className="button button--secondary button--inline"
+                                  onClick={() => addProjectTechStack(project.uiKey)}
+                                  type="button"
+                                >
+                                  Add
+                                </button>
+                              </div>
+                              <div className="chip-list">
+                                {project.techStack.length ? (
+                                  project.techStack.map((stackItem) => (
+                                    <button
+                                      className="chip"
+                                      key={`${project.uiKey}-${stackItem}`}
+                                      onClick={() => removeProjectTechStack(project.uiKey, stackItem)}
+                                      type="button"
+                                    >
+                                      <span>{stackItem}</span>
+                                      <span aria-hidden="true">×</span>
+                                    </button>
+                                  ))
+                                ) : (
+                                  <p className="field-note">Add the languages, tools, and frameworks used here.</p>
+                                )}
+                              </div>
+                            </div>
+                            <label className="field">
+                              <span>Description</span>
+                              <textarea
+                                aria-label={`Project ${index + 1} description`}
+                                rows="4"
+                                placeholder="What does it do and why does it matter?"
+                                value={project.description}
+                                onChange={(event) => updateProjectField(project.uiKey, 'description', event.target.value)}
+                              />
+                            </label>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="empty-projects">
+                        <p>No projects added yet.</p>
+                        <span>Start with one strong project card and build out from there.</span>
+                      </div>
+                    )}
+                  </section>
+                )}
+                {avatarNotice ? <p className="notice notice--success">{avatarNotice}</p> : null}
+                {notice ? <p className="notice notice--success">{notice}</p> : null}
+                {error ? <p className="notice notice--error">{error}</p> : null}
+                <button className="button" disabled={saving} type="submit">
+                  {saving ? (avatarFile ? 'Uploading and saving...' : 'Saving...') : 'Save profile'}
+                </button>
+              </form>
+            )}
+          </div>
+        </section>
+      </div>
+    </AppShell>
   );
 }

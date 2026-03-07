@@ -4,8 +4,6 @@ import helmet from 'helmet';
 import {
   errorResponseSchema,
   meResponseSchema,
-  notificationsResponseSchema,
-  swipeInputSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
 import { getEnv } from './env.js';
@@ -18,12 +16,6 @@ import {
   profileColumns,
   syncProjects
 } from './profile.js';
-import {
-  getNotifications,
-  markAllNotificationsAsRead,
-  markNotificationAsRead,
-  recordSwipe
-} from './notifications.js';
 import { createAuthClient, createRequestClient } from './supabase.js';
 
 function isAllowedOrigin(origin, configuredOrigin) {
@@ -161,61 +153,6 @@ export function createApp({
           projects
         }
       });
-
-      response.json(payload);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.post('/api/v1/swipes', async (request, response, next) => {
-    try {
-      const { user } = request.auth;
-      const client = request.supabase;
-      const input = swipeInputSchema.parse(request.body);
-
-      await recordSwipe(client, user.id, input.profileId, input.direction);
-
-      response.json({ status: 'ok' });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.get('/api/v1/notifications', async (request, response, next) => {
-    try {
-      const { user } = request.auth;
-      const client = request.supabase;
-      const notificationsData = await getNotifications(client, user.id);
-      const payload = notificationsResponseSchema.parse(notificationsData);
-
-      response.json(payload);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.post('/api/v1/notifications/:id/read', async (request, response, next) => {
-    try {
-      const { user } = request.auth;
-      const client = request.supabase;
-      const { id: notificationId } = request.params;
-
-      const notification = await markNotificationAsRead(client, notificationId, user.id);
-
-      response.json(notification);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.post('/api/v1/notifications/mark-all-read', async (request, response, next) => {
-    try {
-      const { user } = request.auth;
-      const client = request.supabase;
-
-      const notificationsData = await markAllNotificationsAsRead(client, user.id);
-      const payload = notificationsResponseSchema.parse(notificationsData);
 
       response.json(payload);
     } catch (error) {

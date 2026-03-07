@@ -37,6 +37,10 @@ vi.mock('../lib/profileMedia.js', () => ({
   validateAvatarFile: mediaMocks.validateAvatarFile
 }));
 
+vi.mock('../components/layout/AppShell.jsx', () => ({
+  default: ({ children }) => children
+}));
+
 describe('ProfilePage', () => {
   beforeEach(() => {
     apiMocks.getMe.mockReset();

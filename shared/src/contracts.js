@@ -22,6 +22,21 @@ export const projectInputSchema = z.object({
   techStack: z.array(skillSchema).max(16, 'Add 16 tech stack items or fewer.')
 });
 
+export const projectFeedItemSchema = z.object({
+  id: z.uuid(),
+  name: z.string().trim().min(1).max(80),
+  theme: z.string().trim().max(48),
+  description: z.string().trim().max(480),
+  techStack: z.array(skillSchema).max(16),
+  owner: z.object({
+    id: z.uuid(),
+    fullName: z.string().trim().min(1).max(80),
+    avatarUrl: z.url().nullable()
+  })
+});
+
+export const projectFeedSchema = z.array(projectFeedItemSchema);
+
 export const profileSchema = z.object({
   id: z.uuid(),
   fullName: z.string().trim().max(80),
@@ -68,26 +83,4 @@ export const errorResponseSchema = z.object({
     code: z.string(),
     message: z.string()
   })
-});
-
-export const swipeInputSchema = z.object({
-  direction: z.enum(['left', 'right'], {
-    errorMap: () => ({ message: 'Direction must be "left" or "right"' })
-  }),
-  profileId: z.uuid()
-});
-
-export const notificationSchema = z.object({
-  id: z.uuid(),
-  userId: z.uuid(),
-  triggeredByUserId: z.uuid(),
-  notificationType: z.enum(['profile_liked', 'project_liked']),
-  isRead: z.boolean(),
-  createdAt: z.string().datetime({ offset: true }),
-  readAt: z.string().datetime({ offset: true }).nullable()
-});
-
-export const notificationsResponseSchema = z.object({
-  notifications: z.array(notificationSchema),
-  unreadCount: z.number().int().min(0)
 });
