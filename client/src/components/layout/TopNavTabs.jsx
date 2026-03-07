@@ -1,4 +1,4 @@
-import { Badge, Paper, Tabs, Tab } from "@mui/material";
+import { Badge, Paper, Tabs, Tab, Box } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useNotifications } from "../../context/useNotifications.js";
 
@@ -47,23 +47,22 @@ export default function TopNavTabs() {
               value={item.value}
               label={
                 isNotificationTab && unreadCount > 0 ? (
-                  <Badge
-                    badgeContent={unreadCount}
-                    color="error"
-                    sx={{
-                      "& .MuiBadge-badge": {
-                        right: -8,
-                        top: 8,
-                        fontSize: "0.65rem",
-                        height: 18,
-                        minWidth: 18,
-                        paddingRight: "3px",
-                        paddingLeft: "3px"
-                      }
-                    }}
-                  >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <span>{item.label}</span>
-                  </Badge>
+                    <Badge
+                      badgeContent={unreadCount}
+                      color="error"
+                      sx={{
+                        "& .MuiBadge-badge": {
+                          fontSize: "0.65rem",
+                          height: 18,
+                          minWidth: 18,
+                          paddingRight: "3px",
+                          paddingLeft: "3px"
+                        }
+                      }}
+                    />
+                  </Box>
                 ) : (
                   item.label
                 )

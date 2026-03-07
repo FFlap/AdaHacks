@@ -25,6 +25,24 @@ const MOCK_NOTIFICATIONS = [
     userId: 'current-user-id',
     triggeredByUserId: '550e8400-e29b-41d4-a716-446655440012',
     notificationType: 'profile_liked',
+    isRead: false,
+    createdAt: new Date(Date.now() - 25 * 60000).toISOString(),
+    readAt: null
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440004',
+    userId: 'current-user-id',
+    triggeredByUserId: '550e8400-e29b-41d4-a716-446655440013',
+    notificationType: 'project_liked',
+    isRead: false,
+    createdAt: new Date(Date.now() - 45 * 60000).toISOString(),
+    readAt: null
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440005',
+    userId: 'current-user-id',
+    triggeredByUserId: '550e8400-e29b-41d4-a716-446655440014',
+    notificationType: 'profile_liked',
     isRead: true,
     createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
     readAt: new Date(Date.now() - 1800000).toISOString()
@@ -47,6 +65,12 @@ const MOCK_PROFILES = {
         techStack: ['React', 'Firebase']
       }
     ],
+    socials: {
+      linkedin: 'https://linkedin.com/in/alexjohnson',
+      instagram: 'https://instagram.com/alexjohnson',
+      github: 'https://github.com/alexjohnson',
+      twitter: 'https://twitter.com/alexjohnson'
+    },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -72,6 +96,11 @@ const MOCK_PROFILES = {
         techStack: ['Next.js', 'Framer Motion']
       }
     ],
+    socials: {
+      linkedin: 'https://linkedin.com/in/sarahchen',
+      instagram: 'https://instagram.com/sarahchen',
+      dribbble: 'https://dribbble.com/sarahchen'
+    },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -90,6 +119,58 @@ const MOCK_PROFILES = {
         techStack: ['Python', 'FastAPI', 'PostgreSQL']
       }
     ],
+    socials: {
+      linkedin: 'https://linkedin.com/in/marcuswilliams',
+      github: 'https://github.com/marcuswilliams',
+      twitter: 'https://twitter.com/marcuswilliams'
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  '550e8400-e29b-41d4-a716-446655440013': {
+    id: '550e8400-e29b-41d4-a716-446655440013',
+    fullName: 'Emma Rodriguez',
+    bio: 'Mobile app developer & startup enthusiast',
+    avatarUrl: 'https://i.pravatar.cc/150?img=9',
+    skills: ['React Native', 'Swift', 'Firebase', 'Expo'],
+    projects: [
+      {
+        id: 'proj-5',
+        name: 'Fitness Tracker Pro',
+        theme: 'Health',
+        description: 'Cross-platform fitness tracking application',
+        techStack: ['React Native', 'Firebase', 'Expo']
+      }
+    ],
+    socials: {
+      linkedin: 'https://linkedin.com/in/emmarodriguez',
+      instagram: 'https://instagram.com/emmarodriguez',
+      github: 'https://github.com/emmarodriguez'
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  '550e8400-e29b-41d4-a716-446655440014': {
+    id: '550e8400-e29b-41d4-a716-446655440014',
+    fullName: 'David Park',
+    bio: 'Data scientist & ML engineer',
+    avatarUrl: 'https://i.pravatar.cc/150?img=12',
+    skills: ['Python', 'TensorFlow', 'SQL', 'Data Analysis', 'Machine Learning'],
+    projects: [
+      {
+        id: 'proj-6',
+        name: 'Predictive Analytics Platform',
+        theme: 'Data',
+        description: 'Real-time data analysis and prediction platform',
+        techStack: ['Python', 'TensorFlow', 'PostgreSQL', 'React']
+      }
+    ],
+    socials: {
+      linkedin: 'https://linkedin.com/in/davidpark',
+      github: 'https://github.com/davidpark',
+      twitter: 'https://twitter.com/davidpark',
+      instagram: 'https://instagram.com/davidpark'
+    },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
@@ -115,6 +196,7 @@ export function useNotifications() {
     } else {
       // Delete notification
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     }
   };
 

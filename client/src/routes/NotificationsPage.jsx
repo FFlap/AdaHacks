@@ -13,8 +13,15 @@ import {
   Typography,
   Avatar,
   Chip,
-  Alert
+  Alert,
+  IconButton,
+  Tooltip
 } from '@mui/material';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import TwitterIcon from '@mui/icons-material/Twitter';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import AppShell from '../components/layout/AppShell.jsx';
 import { useNotifications } from '../context/useNotifications.js';
 
@@ -231,31 +238,118 @@ const NotificationsPage = () => {
                 </Box>
 
                 <Typography variant="body2" sx={{ textAlign: 'center', mb: 3, fontWeight: 500 }}>
-                  Would you like to connect with{' '}
-                  {notificationProfiles[expandedNotification.triggeredByUserId]?.fullName.split(' ')[0]}?
+                  Connect with {notificationProfiles[expandedNotification.triggeredByUserId]?.fullName.split(' ')[0]}
                 </Typography>
+
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5, flexWrap: 'wrap', mb: 2 }}>
+                  {notificationProfiles[expandedNotification.triggeredByUserId]?.socials?.linkedin && (
+                    <Tooltip title="Open LinkedIn">
+                      <IconButton
+                        component="a"
+                        href={notificationProfiles[expandedNotification.triggeredByUserId].socials.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          color: '#0077B5',
+                          border: '2px solid #0077B5',
+                          '&:hover': {
+                            backgroundColor: '#f0f8ff'
+                          }
+                        }}
+                      >
+                        <LinkedInIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+
+                  {notificationProfiles[expandedNotification.triggeredByUserId]?.socials?.instagram && (
+                    <Tooltip title="Open Instagram">
+                      <IconButton
+                        component="a"
+                        href={notificationProfiles[expandedNotification.triggeredByUserId].socials.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          color: '#E4405F',
+                          border: '2px solid #E4405F',
+                          '&:hover': {
+                            backgroundColor: '#fff0f5'
+                          }
+                        }}
+                      >
+                        <InstagramIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+
+                  {notificationProfiles[expandedNotification.triggeredByUserId]?.socials?.github && (
+                    <Tooltip title="Open GitHub">
+                      <IconButton
+                        component="a"
+                        href={notificationProfiles[expandedNotification.triggeredByUserId].socials.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          color: '#333',
+                          border: '2px solid #333',
+                          '&:hover': {
+                            backgroundColor: '#f5f5f5'
+                          }
+                        }}
+                      >
+                        <GitHubIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+
+                  {notificationProfiles[expandedNotification.triggeredByUserId]?.socials?.twitter && (
+                    <Tooltip title="Open Twitter / X">
+                      <IconButton
+                        component="a"
+                        href={notificationProfiles[expandedNotification.triggeredByUserId].socials.twitter}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          color: '#1DA1F2',
+                          border: '2px solid #1DA1F2',
+                          '&:hover': {
+                            backgroundColor: '#f0f8ff'
+                          }
+                        }}
+                      >
+                        <TwitterIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+
+                  {notificationProfiles[expandedNotification.triggeredByUserId]?.socials?.dribbble && (
+                    <Tooltip title="Open Dribbble">
+                      <IconButton
+                        component="a"
+                        href={notificationProfiles[expandedNotification.triggeredByUserId].socials.dribbble}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          color: '#EA4C89',
+                          border: '2px solid #EA4C89',
+                          '&:hover': {
+                            backgroundColor: '#fff5f7'
+                          }
+                        }}
+                      >
+                        <EmojiEventsIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
               </DialogContent>
-              <DialogActions sx={{ gap: 2, p: 2 }}>
+              <DialogActions sx={{ gap: 2, p: 2, justifyContent: 'center' }}>
                 <Button
                   onClick={() => handleNoThanks(expandedNotification)}
                   variant="outlined"
                   color="inherit"
-                  fullWidth
                 >
-                  No Thanks
-                </Button>
-                <Button
-                  onClick={() => handleConnect(expandedNotification)}
-                  variant="contained"
-                  sx={{
-                    backgroundColor: '#4338ca',
-                    '&:hover': {
-                      backgroundColor: '#3730a3'
-                    }
-                  }}
-                  fullWidth
-                >
-                  Connect
+                  Dismiss
                 </Button>
               </DialogActions>
             </>
