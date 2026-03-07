@@ -37,6 +37,24 @@ export const projectFeedItemSchema = z.object({
 
 export const projectFeedSchema = z.array(projectFeedItemSchema);
 
+export const personProjectSummarySchema = z.object({
+  id: z.uuid(),
+  name: z.string().trim().min(1).max(80),
+  theme: z.string().trim().max(48)
+});
+
+export const personFeedItemSchema = z.object({
+  id: z.uuid(),
+  fullName: z.string().trim().min(1).max(80),
+  avatarUrl: z.url().nullable(),
+  bio: z.string().trim().max(280),
+  skills: z.array(skillSchema).max(16),
+  createdAt: z.string().datetime({ offset: true }),
+  projects: z.array(personProjectSummarySchema)
+});
+
+export const peopleFeedSchema = z.array(personFeedItemSchema);
+
 export const profileSchema = z.object({
   id: z.uuid(),
   fullName: z.string().trim().max(80),

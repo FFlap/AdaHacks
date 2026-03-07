@@ -126,6 +126,36 @@ export async function listDiscoverableProjects(client, supabaseUrl) {
   return data.map((row) => mapProjectFeedRow(row, supabaseUrl));
 }
 
+function mapPeopleProjectSummary(project = {}) {
+  return {
+    id: project.id,
+    name: project.name,
+    theme: project.theme ?? ''
+  };
+}
+
+export function mapPeopleFeedRow(row, supabaseUrl) {
+  return {
+    id: row.id,
+    fullName: toDisplayName(row.full_name, row.email),
+    avatarUrl: getAvatarUrl(supabaseUrl, row.avatar_path),
+    bio: row.bio ?? '',
+    skills: normalizeSkills(row.skills ?? []),
+    createdAt: row.created_at,
+    projects: (row.projects ?? []).map(mapPeopleProjectSummary)
+  };
+}
+
+export async function listDiscoverablePeople(client, supabaseUrl) {
+  const { data, error } = await client.rpc('list_discoverable_people');
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map((row) => mapPeopleFeedRow(row, supabaseUrl));
+}
+
 export async function syncProjects(client, userId, projects) {
   const normalizedProjects = projects.map(normalizeProject);
   const { data: existingRows, error: existingError } = await client
