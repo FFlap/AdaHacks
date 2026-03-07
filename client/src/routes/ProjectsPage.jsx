@@ -4,7 +4,7 @@ import SwipeDeck from "../components/swipe/SwipeDeck";
 import ProjectSwipeCard from "../components/swipe/ProjectSwipeCard";
 import SwipeActionButtons from "../components/swipe/SwipeActionButtons";
 import mockProjects from "../data/mockProjects";
-
+import AppShell from "../components/layout/AppShell.jsx";
 export default function ProjectsPage() {
   const [projects] = useState(mockProjects);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -32,14 +32,15 @@ export default function ProjectsPage() {
   };
 
   return (
+    <AppShell>
     <Box sx={{ p: 4 }}>
+
       <Typography variant="h4" align="center" sx={{ mb: 1 }}>
         Projects
       </Typography>
       <Typography align="center" color="text.secondary" sx={{ mb: 4 }}>
         Swipe through projects to find something to join.
       </Typography>
-
       <SwipeDeck
         items={projects}
         currentIndex={currentIndex}
@@ -55,5 +56,6 @@ export default function ProjectsPage() {
 
       <SwipeActionButtons onPass={handlePass} onLike={handleLike} />
     </Box>
+    </AppShell>
   );
 }

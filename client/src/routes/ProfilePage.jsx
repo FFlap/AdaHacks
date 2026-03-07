@@ -1,7 +1,7 @@
 import { startTransition, useEffect, useEffectEvent, useState } from 'react';
 import { getMe, updateProfile } from '../lib/api.js';
 import { useAuth } from '../context/useAuth.js';
-
+import AppShell from '../components/layout/AppShell.jsx';
 export function ProfilePage() {
   const { session, signOut } = useAuth();
   const [data, setData] = useState(null);
@@ -68,6 +68,7 @@ export function ProfilePage() {
 
   return (
     <div className="shell">
+      <AppShell>
       <section className="profile-layout">
         <aside className="card profile-side">
           <p className="brand-mark">AdaHacks</p>
@@ -125,6 +126,7 @@ export function ProfilePage() {
           )}
         </div>
       </section>
+      </AppShell>
     </div>
   );
 }
