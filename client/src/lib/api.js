@@ -1,6 +1,8 @@
 import {
   errorResponseSchema,
   meResponseSchema,
+  notificationsResponseSchema,
+  swipeInputSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
 import { env } from './env.js';
@@ -44,4 +46,40 @@ export async function updateProfile(token, input) {
   });
 
   return meResponseSchema.parse(response);
+}
+
+export async function recordSwipe(token, direction, profileId) {
+  const payload = swipeInputSchema.parse({
+    direction,
+    profileId
+  });
+
+  await request('/api/v1/swipes', {
+    method: 'POST',
+    token,
+    body: payload
+  });
+}
+
+export async function getNotifications(token) {
+  const payload = await request('/api/v1/notifications', { token });
+  return notificationsResponseSchema.parse(payload);
+}
+
+export async function markNotificationAsRead(token, notificationId) {
+  const response = await request(`/api/v1/notifications/${notificationId}/read`, {
+    method: 'POST',
+    token
+  });
+
+  return response;
+}
+
+export async function markAllNotificationsAsRead(token) {
+  const payload = await request('/api/v1/notifications/mark-all-read', {
+    method: 'POST',
+    token
+  });
+
+  return notificationsResponseSchema.parse(payload);
 }

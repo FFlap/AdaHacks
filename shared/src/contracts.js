@@ -69,3 +69,25 @@ export const errorResponseSchema = z.object({
     message: z.string()
   })
 });
+
+export const swipeInputSchema = z.object({
+  direction: z.enum(['left', 'right'], {
+    errorMap: () => ({ message: 'Direction must be "left" or "right"' })
+  }),
+  profileId: z.uuid()
+});
+
+export const notificationSchema = z.object({
+  id: z.uuid(),
+  userId: z.uuid(),
+  triggeredByUserId: z.uuid(),
+  notificationType: z.enum(['profile_liked', 'project_liked']),
+  isRead: z.boolean(),
+  createdAt: z.string().datetime({ offset: true }),
+  readAt: z.string().datetime({ offset: true }).nullable()
+});
+
+export const notificationsResponseSchema = z.object({
+  notifications: z.array(notificationSchema),
+  unreadCount: z.number().int().min(0)
+});
