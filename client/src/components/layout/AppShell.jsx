@@ -1,15 +1,15 @@
-import { Box, Container } from "@mui/material";
-import TopNavTabs from "./TopNavTabs";
+import { Box, Container } from '@mui/material';
+import TopNavTabs from './TopNavTabs';
 
 export default function AppShell({ children }) {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        py: 4,
+        minHeight: '100vh',
+        py: 4
       }}
     >
-      <Container maxWidth="md">
+      <Container maxWidth="xl">
         <TopNavTabs />
         <Box sx={{ mt: 4 }}>{children}</Box>
       </Container>
