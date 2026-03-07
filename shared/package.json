@@ -1,0 +1,16 @@
+{
+  "name": "@adahacks/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./contracts": "./src/contracts.js"
+  },
+  "scripts": {
+    "build": "node -e \"process.stdout.write('shared: no build step\\n')\""
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  }
+}
