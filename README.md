@@ -35,6 +35,13 @@
    npx supabase db push
    ```
 
+   That push now creates:
+   - the `profiles` columns for `avatar_path` and `skills`
+   - the `projects` table used by the profile page project cards
+   - the authenticated project-discovery feed function used by `/projects`
+   - the public `profile-images` storage bucket
+   - storage policies so each user can upload only their own avatar file
+
 5. In the Supabase dashboard, enable Email auth under Authentication if it is not already enabled.
 
 6. Start the app:
@@ -53,6 +60,8 @@ npm run dev
 
 - Client: `http://localhost:5173`
 - API: `http://localhost:4010`
+
+If Vite starts on a different port such as `5174`, update `CLIENT_ORIGIN` in the root `.env` to match it before testing profile saves.
 
 ## Commands
 

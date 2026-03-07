@@ -4,11 +4,20 @@ import helmet from 'helmet';
 import {
   errorResponseSchema,
   meResponseSchema,
+  projectFeedSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
 import { getEnv } from './env.js';
 import { HttpError, toErrorResponse } from './errors.js';
-import { ensureProfile, mapProfileRow } from './profile.js';
+import {
+  ensureProfile,
+  listDiscoverableProjects,
+  listProjects,
+  mapProfileRow,
+  normalizeSkills,
+  profileColumns,
+  syncProjects
+} from './profile.js';
 import { createAuthClient, createRequestClient } from './supabase.js';
 
 function isAllowedOrigin(origin, configuredOrigin) {
@@ -91,7 +100,8 @@ export function createApp({
     try {
       const { user } = request.auth;
       const client = request.supabase;
-      const profile = await ensureProfile(client, user.id);
+      const profile = await ensureProfile(client, user.id, env.supabaseUrl);
+      profile.projects = await listProjects(client, user.id);
       const payload = meResponseSchema.parse({
         user: {
           id: user.id,
@@ -106,33 +116,57 @@ export function createApp({
     }
   });
 
+  app.get('/api/v1/projects', async (request, response, next) => {
+    try {
+      const client = request.supabase;
+      const payload = projectFeedSchema.parse(
+        await listDiscoverableProjects(client, env.supabaseUrl)
+      );
+
+      response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.patch('/api/v1/me/profile', async (request, response, next) => {
     try {
       const { user } = request.auth;
       const client = request.supabase;
       const input = updateProfileInputSchema.parse(request.body);
+      const nextProfile = {
+        id: user.id,
+        full_name: input.fullName,
+        bio: input.bio,
+        skills: normalizeSkills(input.skills)
+      };
+
+      if (input.avatarPath !== undefined) {
+        nextProfile.avatar_path = input.avatarPath;
+      }
+
       const { data, error } = await client
         .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: input.fullName,
-          bio: input.bio
-        }, {
+        .upsert(nextProfile, {
           onConflict: 'id'
         })
-        .select('id, full_name, bio, created_at, updated_at')
+        .select(profileColumns)
         .single();
 
       if (error) {
         throw error;
       }
 
+      const projects = await syncProjects(client, user.id, input.projects);
       const payload = meResponseSchema.parse({
         user: {
           id: user.id,
           email: user.email
         },
-        profile: mapProfileRow(data)
+        profile: {
+          ...mapProfileRow(data, env.supabaseUrl),
+          projects
+        }
       });
 
       response.json(payload);
