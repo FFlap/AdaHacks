@@ -1,6 +1,7 @@
 import {
   errorResponseSchema,
   meResponseSchema,
+  projectFeedSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
 import { env } from './env.js';
@@ -44,4 +45,9 @@ export async function updateProfile(token, input) {
   });
 
   return meResponseSchema.parse(response);
+}
+
+export async function getProjectsFeed(token) {
+  const payload = await request('/api/v1/projects', { token });
+  return projectFeedSchema.parse(payload);
 }

@@ -71,6 +71,22 @@ export async function ensureProfile(client, userId, supabaseUrl) {
   return mapProfileRow(data, supabaseUrl);
 }
 
+function toDisplayName(fullName, email) {
+  const normalizedName = fullName?.trim();
+
+  if (normalizedName) {
+    return normalizedName;
+  }
+
+  const localPart = email?.split('@')[0]?.trim();
+
+  if (localPart) {
+    return localPart;
+  }
+
+  return 'Anonymous builder';
+}
+
 export async function listProjects(client, userId) {
   const { data, error } = await client
     .from('projects')
@@ -83,6 +99,31 @@ export async function listProjects(client, userId) {
   }
 
   return data.map(mapProjectRow);
+}
+
+export function mapProjectFeedRow(row, supabaseUrl) {
+  return {
+    id: row.id,
+    name: row.name,
+    theme: row.theme,
+    description: row.description,
+    techStack: normalizeSkills(row.tech_stack ?? []),
+    owner: {
+      id: row.owner_id,
+      fullName: toDisplayName(row.owner_full_name, row.owner_email),
+      avatarUrl: getAvatarUrl(supabaseUrl, row.owner_avatar_path)
+    }
+  };
+}
+
+export async function listDiscoverableProjects(client, supabaseUrl) {
+  const { data, error } = await client.rpc('list_discoverable_projects');
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map((row) => mapProjectFeedRow(row, supabaseUrl));
 }
 
 export async function syncProjects(client, userId, projects) {

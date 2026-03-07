@@ -145,6 +145,65 @@ describe('API', () => {
     ]);
   });
 
+  it('returns a discoverable projects feed for authenticated users', async () => {
+    const authClient = createMockSupabaseClient();
+    authClient.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+          email: 'ada@example.com'
+        }
+      },
+      error: null
+    });
+
+    const requestClient = {
+      rpc: vi.fn().mockResolvedValue({
+        data: [
+          {
+            id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+            name: 'Pulse',
+            theme: 'Hackathon',
+            description: 'Live team coordination board.',
+            tech_stack: ['Node.js', 'Express'],
+            owner_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+            owner_full_name: 'Maya Chen',
+            owner_avatar_path: '5ba6c5b5-5341-4638-a164-a3b0f9b88447/avatar',
+            owner_email: 'maya@example.com'
+          }
+        ],
+        error: null
+      })
+    };
+
+    const app = createApp({
+      env,
+      authClientFactory: () => authClient,
+      requestClientFactory: () => requestClient
+    });
+
+    const response = await request(app)
+      .get('/api/v1/projects')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(response.status).toBe(200);
+    expect(requestClient.rpc).toHaveBeenCalledWith('list_discoverable_projects');
+    expect(response.body).toEqual([
+      {
+        id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+        name: 'Pulse',
+        theme: 'Hackathon',
+        description: 'Live team coordination board.',
+        techStack: ['Node.js', 'Express'],
+        owner: {
+          id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+          fullName: 'Maya Chen',
+          avatarUrl: 'https://example.supabase.co/storage/v1/object/public/profile-images/5ba6c5b5-5341-4638-a164-a3b0f9b88447/avatar'
+        }
+      }
+    ]);
+  });
+
   it('validates profile updates with nested projects', async () => {
     const authClient = createMockSupabaseClient();
     authClient.auth.getUser.mockResolvedValue({
