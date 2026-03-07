@@ -12,6 +12,49 @@ function createMockSupabaseClient(overrides = {}) {
   };
 }
 
+function createProfilesTable(profileRow) {
+  return {
+    upsert: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: profileRow,
+          error: null
+        })
+      })
+    })
+  };
+}
+
+function createProjectsTable({ existingIds = [], rows = [] } = {}) {
+  return {
+    select: vi.fn((columns) => {
+      if (columns === 'id') {
+        return {
+          eq: vi.fn().mockResolvedValue({
+            data: existingIds.map((id) => ({ id })),
+            error: null
+          })
+        };
+      }
+
+      return {
+        eq: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({
+            data: rows,
+            error: null
+          })
+        })
+      };
+    }),
+    delete: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        in: vi.fn().mockResolvedValue({ error: null })
+      })
+    }),
+    upsert: vi.fn().mockResolvedValue({ error: null })
+  };
+}
+
 const env = {
   port: 4010,
   clientOrigin: 'http://localhost:5173',
@@ -29,7 +72,7 @@ describe('API', () => {
     expect(response.body.error.code).toBe('missing_token');
   });
 
-  it('returns user and profile for an authenticated request', async () => {
+  it('returns user, profile, and projects for an authenticated request', async () => {
     const authClient = createMockSupabaseClient();
     authClient.auth.getUser.mockResolvedValue({
       data: {
@@ -41,24 +84,38 @@ describe('API', () => {
       error: null
     });
 
+    const profilesTable = createProfilesTable({
+      id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      full_name: 'Ada Lovelace',
+      bio: 'Analytical engine enthusiast',
+      avatar_path: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar',
+      skills: ['React', 'Supabase'],
+      created_at: '2026-03-07T18:00:00.000Z',
+      updated_at: '2026-03-07T18:05:00.000Z'
+    });
+    const projectsTable = createProjectsTable({
+      rows: [
+        {
+          id: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
+          name: 'Orbit',
+          theme: 'Climate',
+          description: 'Maps urban heat islands.',
+          tech_stack: ['Vite', 'Supabase'],
+          created_at: '2026-03-07T18:01:00.000Z'
+        }
+      ]
+    });
     const requestClient = {
-      from: vi.fn().mockReturnValue({
-        upsert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({
-              data: {
-                id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
-                full_name: 'Ada Lovelace',
-                bio: 'Analytical engine enthusiast',
-                avatar_path: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar',
-                skills: ['React', 'Supabase'],
-                created_at: '2026-03-07T18:00:00.000Z',
-                updated_at: '2026-03-07T18:05:00.000Z'
-              },
-              error: null
-            })
-          })
-        })
+      from: vi.fn((table) => {
+        if (table === 'profiles') {
+          return profilesTable;
+        }
+
+        if (table === 'projects') {
+          return projectsTable;
+        }
+
+        throw new Error(`Unexpected table: ${table}`);
       })
     };
 
@@ -77,9 +134,18 @@ describe('API', () => {
     expect(response.body.profile.fullName).toBe('Ada Lovelace');
     expect(response.body.profile.avatarUrl).toContain('/profile-images/34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar');
     expect(response.body.profile.skills).toEqual(['React', 'Supabase']);
+    expect(response.body.profile.projects).toEqual([
+      {
+        id: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
+        name: 'Orbit',
+        theme: 'Climate',
+        description: 'Maps urban heat islands.',
+        techStack: ['Vite', 'Supabase']
+      }
+    ]);
   });
 
-  it('validates profile updates', async () => {
+  it('validates profile updates with nested projects', async () => {
     const authClient = createMockSupabaseClient();
     authClient.auth.getUser.mockResolvedValue({
       data: {
@@ -102,15 +168,23 @@ describe('API', () => {
       .set('Authorization', 'Bearer valid-token')
       .send({
         fullName: 'Ada',
-        bio: 'x'.repeat(500),
-        skills: []
+        bio: 'Builder',
+        skills: [],
+        projects: [
+          {
+            name: '',
+            theme: 'Hackathon',
+            description: 'Prototype',
+            techStack: []
+          }
+        ]
       });
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe('validation_error');
   });
 
-  it('persists a valid profile update', async () => {
+  it('persists a valid profile update and syncs projects', async () => {
     const authClient = createMockSupabaseClient();
     authClient.auth.getUser.mockResolvedValue({
       data: {
@@ -122,24 +196,47 @@ describe('API', () => {
       error: null
     });
 
+    const profilesTable = createProfilesTable({
+      id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      full_name: 'Ada Byron',
+      bio: 'First programmer',
+      avatar_path: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar',
+      skills: ['React', 'Supabase', 'Node.js'],
+      created_at: '2026-03-07T18:00:00.000Z',
+      updated_at: '2026-03-07T18:10:00.000Z'
+    });
+    const projectsTable = createProjectsTable({
+      existingIds: ['b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9'],
+      rows: [
+        {
+          id: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
+          name: 'Orbit',
+          theme: 'Climate',
+          description: 'Maps urban heat islands.',
+          tech_stack: ['Vite', 'Supabase'],
+          created_at: '2026-03-07T18:01:00.000Z'
+        },
+        {
+          id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+          name: 'Pulse',
+          theme: 'Hackathon',
+          description: 'Live team coordination board.',
+          tech_stack: ['Node.js', 'Express'],
+          created_at: '2026-03-07T18:06:00.000Z'
+        }
+      ]
+    });
     const requestClient = {
-      from: vi.fn().mockReturnValue({
-        upsert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({
-              data: {
-                id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
-                full_name: 'Ada Byron',
-                bio: 'First programmer',
-                avatar_path: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar',
-                skills: ['React', 'Supabase', 'Node.js'],
-                created_at: '2026-03-07T18:00:00.000Z',
-                updated_at: '2026-03-07T18:10:00.000Z'
-              },
-              error: null
-            })
-          })
-        })
+      from: vi.fn((table) => {
+        if (table === 'profiles') {
+          return profilesTable;
+        }
+
+        if (table === 'projects') {
+          return projectsTable;
+        }
+
+        throw new Error(`Unexpected table: ${table}`);
       })
     };
 
@@ -156,12 +253,46 @@ describe('API', () => {
         fullName: 'Ada Byron',
         bio: 'First programmer',
         avatarPath: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar',
-        skills: ['React', 'Supabase', 'Node.js']
+        skills: ['React', 'Supabase', 'Node.js'],
+        projects: [
+          {
+            id: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
+            name: 'Orbit',
+            theme: 'Climate',
+            description: 'Maps urban heat islands.',
+            techStack: ['Vite', 'Supabase']
+          },
+          {
+            name: 'Pulse',
+            theme: 'Hackathon',
+            description: 'Live team coordination board.',
+            techStack: ['Node.js', 'Express']
+          }
+        ]
       });
 
     expect(response.status).toBe(200);
     expect(response.body.profile.bio).toBe('First programmer');
     expect(response.body.profile.id).toBe('34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620');
-    expect(response.body.profile.skills).toEqual(['React', 'Supabase', 'Node.js']);
+    expect(response.body.profile.projects).toHaveLength(2);
+    expect(projectsTable.upsert).toHaveBeenCalledWith([
+      {
+        id: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
+        user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+        name: 'Orbit',
+        theme: 'Climate',
+        description: 'Maps urban heat islands.',
+        tech_stack: ['Vite', 'Supabase']
+      },
+      {
+        user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+        name: 'Pulse',
+        theme: 'Hackathon',
+        description: 'Live team coordination board.',
+        tech_stack: ['Node.js', 'Express']
+      }
+    ], {
+      onConflict: 'id'
+    });
   });
 });

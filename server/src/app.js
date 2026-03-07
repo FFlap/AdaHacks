@@ -10,9 +10,11 @@ import { getEnv } from './env.js';
 import { HttpError, toErrorResponse } from './errors.js';
 import {
   ensureProfile,
+  listProjects,
   mapProfileRow,
   normalizeSkills,
-  profileColumns
+  profileColumns,
+  syncProjects
 } from './profile.js';
 import { createAuthClient, createRequestClient } from './supabase.js';
 
@@ -97,6 +99,7 @@ export function createApp({
       const { user } = request.auth;
       const client = request.supabase;
       const profile = await ensureProfile(client, user.id, env.supabaseUrl);
+      profile.projects = await listProjects(client, user.id);
       const payload = meResponseSchema.parse({
         user: {
           id: user.id,
@@ -139,12 +142,16 @@ export function createApp({
         throw error;
       }
 
+      const projects = await syncProjects(client, user.id, input.projects);
       const payload = meResponseSchema.parse({
         user: {
           id: user.id,
           email: user.email
         },
-        profile: mapProfileRow(data, env.supabaseUrl)
+        profile: {
+          ...mapProfileRow(data, env.supabaseUrl),
+          projects
+        }
       });
 
       response.json(payload);
