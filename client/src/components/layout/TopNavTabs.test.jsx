@@ -33,7 +33,7 @@ describe('TopNavTabs', () => {
     apiMocks.getMe.mockReset();
   });
 
-  it('locks projects and people until the required profile fields are filled', async () => {
+  it('locks gated tabs until the required profile fields are filled', async () => {
     const user = userEvent.setup();
 
     apiMocks.getMe.mockResolvedValue({
@@ -67,11 +67,13 @@ describe('TopNavTabs', () => {
     const projectsTab = screen.getByText('Projects').closest('[role="tab"]');
     const peopleTab = screen.getByText('People').closest('[role="tab"]');
     const matchesTab = screen.getByText('Matches').closest('[role="tab"]');
+    const chatTab = screen.getByText('Chat').closest('[role="tab"]');
     const hacksTab = screen.getByText('Hacks').closest('[role="tab"]');
 
     expect(projectsTab).toHaveAttribute('aria-disabled', 'true');
     expect(peopleTab).toHaveAttribute('aria-disabled', 'true');
     expect(matchesTab).toHaveAttribute('aria-disabled', 'true');
+    expect(chatTab).toHaveAttribute('aria-disabled', 'true');
     expect(hacksTab).toHaveAttribute('aria-disabled', 'true');
 
     await user.hover(screen.getByText('Projects'));

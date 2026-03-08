@@ -8,11 +8,15 @@ import PeoplePage from './routes/PeoplePage.jsx';
 import NotificationsPage from './routes/NotificationsPage.jsx';
 import HacksPage from './routes/HacksPage.jsx';
 import { NotificationsProvider } from './context/useNotifications.js';
+import { ChatsProvider } from './context/useChats.js';
+import ChatPage from './routes/ChatPage.jsx';
 
 function ProtectedAppLayout() {
   return (
     <NotificationsProvider>
-      <Outlet />
+      <ChatsProvider>
+        <Outlet />
+      </ChatsProvider>
     </NotificationsProvider>
   );
 }
@@ -30,6 +34,7 @@ export function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/people" element={<PeoplePage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/chat" element={<ChatPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate replace to="/profile" />} />

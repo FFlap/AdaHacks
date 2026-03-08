@@ -10,6 +10,7 @@ import {
   Alert,
   Avatar,
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
@@ -22,7 +23,9 @@ import {
   Stack,
   Typography
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import AppShell from '../components/layout/AppShell.jsx';
+import { useChats } from '../context/useChats.js';
 import { useNotifications } from '../context/useNotifications.js';
 
 const contactRenderers = [
@@ -59,20 +62,44 @@ function formatTimestamp(value) {
 }
 
 export default function NotificationsPage() {
+  const navigate = useNavigate();
   const {
     notifications,
     loading,
     error,
     markAsRead
   } = useNotifications();
+  const { startChatFromMatch } = useChats();
   const [expandedNotification, setExpandedNotification] = useState(null);
+  const [startingChatFor, setStartingChatFor] = useState('');
+  const [chatError, setChatError] = useState('');
 
   async function handleOpenNotification(notification) {
     const nextNotification = notification.readAt
       ? notification
       : await markAsRead(notification.id);
 
+    setChatError('');
     setExpandedNotification(nextNotification ?? notification);
+  }
+
+  async function handleStartChat() {
+    if (!expandedNotification) {
+      return;
+    }
+
+    setStartingChatFor(expandedNotification.id);
+    setChatError('');
+
+    try {
+      const thread = await startChatFromMatch(expandedNotification);
+      setExpandedNotification(null);
+      navigate(`/chat?thread=${thread.id}`);
+    } catch (startError) {
+      setChatError(startError.message ?? 'Unable to start chat right now.');
+    } finally {
+      setStartingChatFor('');
+    }
   }
 
   return (
@@ -90,7 +117,7 @@ export default function NotificationsPage() {
       >
         <Box sx={{ mb: 4, textAlign: 'center' }}>
           <Typography color="text.secondary" sx={{ '@media (prefers-color-scheme: dark)': { color: '#fff' } }}>
-            Every pass or like on your profile and projects shows up here.
+            Every like on your profile and projects shows up here.
           </Typography>
         </Box>
 
@@ -234,6 +261,12 @@ export default function NotificationsPage() {
               </Box>
 
               <Box sx={{ px: 3, pb: 3, display: 'grid', gap: 3 }}>
+                {chatError ? (
+                  <Alert severity="error">
+                    {chatError}
+                  </Alert>
+                ) : null}
+
                 <Box sx={{ display: 'grid', gap: 1 }}>
                   <Typography sx={{ fontWeight: 600 }}>About them</Typography>
                   <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
@@ -325,6 +358,29 @@ export default function NotificationsPage() {
                     <Typography color="text.secondary">No contact links shared yet.</Typography>
                   )}
                 </Box>
+
+                {expandedNotification.decision === 'like' ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      variant="contained"
+                      onClick={handleStartChat}
+                      disabled={startingChatFor === expandedNotification.id}
+                      sx={{
+                        borderRadius: '999px',
+                        px: 3,
+                        py: 1.1,
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        backgroundColor: '#152028',
+                        '&:hover': {
+                          backgroundColor: '#25394a'
+                        }
+                      }}
+                    >
+                      {startingChatFor === expandedNotification.id ? 'Starting chat...' : 'Start chat'}
+                    </Button>
+                  </Box>
+                ) : null}
               </Box>
             </DialogContent>
           ) : null}
