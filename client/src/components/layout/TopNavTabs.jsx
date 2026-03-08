@@ -9,9 +9,9 @@ import { useNotifications } from "../../context/useNotifications.js";
 const navItems = [
   { label: "Projects", value: "/projects" },
   { label: "People", value: "/people" },
+  { label: "Hacks", value: "/hacks" },
   { label: "Matches", value: "/notifications" },
   { label: "Chat", value: "/chat" },
-  { label: "Hacks", value: "/hacks" },
   { label: "Profile", value: "/profile" },
 ];
 

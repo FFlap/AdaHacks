@@ -164,8 +164,8 @@ export default function ProjectsPage() {
 
         {status === 'loading' ? (
           <Box sx={{ mt: 8, display: 'grid', placeItems: 'center', gap: 2 }}>
-            <CircularProgress color="inherit" size={28} />
-            <Typography color="#e5e7eb">Loading live projects...</Typography>
+            <CircularProgress size={28} sx={{'@media (prefers-color-scheme: dark)': { color: '#fff' } }} />
+            <Typography sx={{ '@media (prefers-color-scheme: dark)': { color: '#fff' } }}>Loading live projects...</Typography>
           </Box>
         ) : null}
 
@@ -176,22 +176,20 @@ export default function ProjectsPage() {
         ) : null}
 
         {status === 'ready' ? (
-          <>
-            <SwipeDeck
-              items={projects}
-              currentIndex={currentIndex}
-              setCurrentIndex={setCurrentIndex}
-              onSwipe={handleSwipe}
-              renderCard={(project) => (
-                <ProjectSwipeCard
-                  project={project}
-                  onOpenSummary={handleOpenSummary}
-                />
-              )}
-            />
-
-            <SwipeActionButtons onPass={handlePass} onLike={handleLike} />
-          </>
+          <SwipeDeck
+            items={projects}
+            currentIndex={currentIndex}
+            setCurrentIndex={setCurrentIndex}
+            onSwipe={handleSwipe}
+            onPass={handlePass}
+            onLike={handleLike}
+            renderCard={(project) => (
+              <ProjectSwipeCard
+                project={project}
+                onOpenSummary={handleOpenSummary}
+              />
+            )}
+          />
         ) : null}
 
         <ProjectAnalysisDialog
