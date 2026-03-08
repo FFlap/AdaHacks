@@ -5,6 +5,14 @@ import { avatarAccept, uploadAvatar, validateAvatarFile } from '../lib/profileMe
 import { useAuth } from '../context/useAuth.js';
 
 let projectKeyCounter = 0;
+const emptyContactLinks = {
+  linkedin: '',
+  instagram: '',
+  twitter: '',
+  github: '',
+  email: '',
+  phone: ''
+};
 
 function newProjectKey() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -50,6 +58,10 @@ function mapProfileToForm(profile) {
   return {
     fullName: profile.fullName,
     bio: profile.bio,
+    contactLinks: {
+      ...emptyContactLinks,
+      ...(profile.contactLinks ?? {})
+    },
     skills: profile.skills,
     projects: (profile.projects ?? []).map(createProjectFormState)
   };
@@ -70,6 +82,18 @@ function toProjectPayload(project) {
   return payload;
 }
 
+function toContactLinksPayload(contactLinks) {
+  return Object.entries(contactLinks).reduce((accumulator, [key, value]) => {
+    const normalizedValue = value.trim();
+
+    if (normalizedValue) {
+      accumulator[key] = normalizedValue;
+    }
+
+    return accumulator;
+  }, {});
+}
+
 export function ProfilePage() {
   const { session, signOut } = useAuth();
   const [activeEditorTab, setActiveEditorTab] = useState('profile');
@@ -77,6 +101,7 @@ export function ProfilePage() {
   const [form, setForm] = useState({
     fullName: '',
     bio: '',
+    contactLinks: emptyContactLinks,
     skills: [],
     projects: []
   });
@@ -284,6 +309,7 @@ export function ProfilePage() {
       const payload = {
         fullName: form.fullName,
         bio: form.bio,
+        contactLinks: toContactLinksPayload(form.contactLinks),
         skills: form.skills,
         projects: form.projects.map(toProjectPayload)
       };
@@ -498,6 +524,107 @@ export function ProfilePage() {
                         placeholder='Add something about yourself!'
                       />
                     </label>
+                    <section className="profile-section">
+                      <div className="section-heading">
+                        <div>
+                          <p className="eyebrow">Contact info</p>
+                        </div>
+                      </div>
+                      <div className="field-grid">
+                        <label className="field">
+                          <span>LinkedIn</span>
+                          <input
+                            name="linkedin"
+                            placeholder="https://linkedin.com/in/your-name"
+                            value={form.contactLinks.linkedin}
+                            onChange={(event) => setForm((current) => ({
+                              ...current,
+                              contactLinks: {
+                                ...current.contactLinks,
+                                linkedin: event.target.value
+                              }
+                            }))}
+                          />
+                        </label>
+                        <label className="field">
+                          <span>Instagram</span>
+                          <input
+                            name="instagram"
+                            placeholder="https://instagram.com/your-handle"
+                            value={form.contactLinks.instagram}
+                            onChange={(event) => setForm((current) => ({
+                              ...current,
+                              contactLinks: {
+                                ...current.contactLinks,
+                                instagram: event.target.value
+                              }
+                            }))}
+                          />
+                        </label>
+                        <label className="field">
+                          <span>Twitter / X</span>
+                          <input
+                            name="twitter"
+                            placeholder="https://x.com/your-handle"
+                            value={form.contactLinks.twitter}
+                            onChange={(event) => setForm((current) => ({
+                              ...current,
+                              contactLinks: {
+                                ...current.contactLinks,
+                                twitter: event.target.value
+                              }
+                            }))}
+                          />
+                        </label>
+                        <label className="field">
+                          <span>GitHub</span>
+                          <input
+                            name="github"
+                            placeholder="https://github.com/your-handle"
+                            value={form.contactLinks.github}
+                            onChange={(event) => setForm((current) => ({
+                              ...current,
+                              contactLinks: {
+                                ...current.contactLinks,
+                                github: event.target.value
+                              }
+                            }))}
+                          />
+                        </label>
+                        <label className="field">
+                          <span>Email</span>
+                          <input
+                            name="contactEmail"
+                            placeholder="you@example.com"
+                            value={form.contactLinks.email}
+                            onChange={(event) => setForm((current) => ({
+                              ...current,
+                              contactLinks: {
+                                ...current.contactLinks,
+                                email: event.target.value
+                              }
+                            }))}
+                            type="email"
+                          />
+                        </label>
+                        <label className="field">
+                          <span>Phone number</span>
+                          <input
+                            name="phone"
+                            placeholder="+1 555 123 4567"
+                            value={form.contactLinks.phone}
+                            onChange={(event) => setForm((current) => ({
+                              ...current,
+                              contactLinks: {
+                                ...current.contactLinks,
+                                phone: event.target.value
+                              }
+                            }))}
+                            type="tel"
+                          />
+                        </label>
+                      </div>
+                    </section>
                   </div>
                 ) : (
                   <section
