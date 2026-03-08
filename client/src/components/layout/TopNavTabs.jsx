@@ -35,7 +35,7 @@ export default function TopNavTabs() {
   const { unreadCount } = useNotifications();
   const [hasUnlockedTabs, setHasUnlockedTabs] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState(null);
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 900px)");
 
   const currentTab =
     navItems.find((item) => location.pathname.startsWith(item.value))?.value ||
@@ -103,14 +103,7 @@ export default function TopNavTabs() {
   return (
     <>
       {isMobile ? (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "flex-end",
-            width: "100%",
-            mb: 2,
-          }}
-        >
+        <Box sx={{ display: "flex" }}>
           <Paper
             elevation={0}
             sx={{

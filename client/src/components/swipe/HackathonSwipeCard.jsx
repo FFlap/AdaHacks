@@ -273,7 +273,7 @@ export default function HackathonSwipeCard({ hackathon, viewer, selectedTags = [
           sx={{
             p: 2.5,
             flex: 1,
-            overflowY: 'auto',
+            overflowY: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             gap: 2,
