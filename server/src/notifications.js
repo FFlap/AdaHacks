@@ -106,7 +106,9 @@ export async function listNotifications(client, supabaseUrl) {
   }
 
   return notificationsSchema.parse(
-    data.map((row) => mapNotificationRow(row, supabaseUrl))
+    data
+      .filter((row) => row.decision === 'like')
+      .map((row) => mapNotificationRow(row, supabaseUrl))
   );
 }
 
