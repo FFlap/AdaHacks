@@ -101,27 +101,107 @@ export default function TopNavTabs() {
   }
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 1,
-        borderRadius: "999px",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#fff",
-        maxWidth: 860,
-        flex: 1,
-        mx: "auto",
-      }}
-    >
-      <Tabs
-        value={currentTab}
-        onChange={handleTabChange}
-        variant="fullWidth"
-        TabIndicatorProps={{ style: { display: "none" } }}
-        sx={{
-          minHeight: 48,
-        }}
-      >
+    <>
+      {isMobile ? (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            width: "100%",
+            mb: 2,
+          }}
+        >
+          <Paper
+            elevation={0}
+            sx={{
+              p: 1,
+              borderRadius: "999px",
+              border: "1px solid #e5e7eb",
+              backgroundColor: "#fff",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <IconButton
+              onClick={handleMenuOpen}
+              sx={{
+                color: "#152028",
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={handleMenuClose}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "right",
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+            >
+              {navItems.map((item) => {
+                const isLocked = profileLockedTabs.has(item.value) && hasUnlockedTabs === false;
+                const isNotificationTab = item.value === "/notifications";
+
+                return (
+                  <MenuItem
+                    key={item.value}
+                    onClick={() => handleMenuItemClick(item.value)}
+                    disabled={isLocked}
+                    sx={{
+                      opacity: isLocked ? 0.45 : 1,
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <span>{item.label}</span>
+                      {isNotificationTab && unreadCount > 0 ? (
+                        <Badge
+                          badgeContent={unreadCount}
+                          color="error"
+                          sx={{
+                            "& .MuiBadge-badge": {
+                              fontSize: "0.65rem",
+                              height: 18,
+                              minWidth: 18,
+                              paddingRight: "3px",
+                              paddingLeft: "3px"
+                            }
+                          }}
+                        />
+                      ) : null}
+                    </Box>
+                  </MenuItem>
+                );
+              })}
+            </Menu>
+          </Paper>
+        </Box>
+      ) : (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 1,
+            borderRadius: "999px",
+            border: "1px solid #e5e7eb",
+            backgroundColor: "#fff",
+            maxWidth: 860,
+            flex: 1,
+            mx: "auto",
+          }}
+        >
+          <Tabs
+            value={currentTab}
+            onChange={handleTabChange}
+            variant="fullWidth"
+            TabIndicatorProps={{ style: { display: "none" } }}
+            sx={{
+              minHeight: 48,
+            }}
+          >
         {navItems.map((item) => {
           const isNotificationTab = item.value === "/notifications";
           const isLocked = profileLockedTabs.has(item.value) && hasUnlockedTabs === false;
