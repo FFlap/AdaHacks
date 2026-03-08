@@ -66,9 +66,13 @@ describe('TopNavTabs', () => {
 
     const projectsTab = screen.getByText('Projects').closest('[role="tab"]');
     const peopleTab = screen.getByText('People').closest('[role="tab"]');
+    const matchesTab = screen.getByText('Matches').closest('[role="tab"]');
+    const hacksTab = screen.getByText('Hacks').closest('[role="tab"]');
 
     expect(projectsTab).toHaveAttribute('aria-disabled', 'true');
     expect(peopleTab).toHaveAttribute('aria-disabled', 'true');
+    expect(matchesTab).toHaveAttribute('aria-disabled', 'true');
+    expect(hacksTab).toHaveAttribute('aria-disabled', 'true');
 
     await user.hover(screen.getByText('Projects'));
 

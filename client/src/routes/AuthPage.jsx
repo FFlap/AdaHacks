@@ -4,11 +4,9 @@ import { useAuth } from '../context/useAuth.js';
 
 const PANELS = {
   signIn: {
-    title: 'Login',
     cta: 'Login'
   },
   signUp: {
-    title: 'Sign up',
     cta: 'Sign up'
   }
 };
@@ -67,7 +65,6 @@ export function AuthPage() {
     <div className="shell shell--auth">
       <section className="auth-wrap">
         <div className="card auth-card auth-card--compact">
-          <p className="brand-mark">AdaHacks</p>
           <div className="auth-card__header">
             <h1 className="auth-card__title">{PANELS[deferredMode].title}</h1>
           </div>
