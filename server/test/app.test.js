@@ -669,29 +669,29 @@ describe('API', () => {
           return Promise.resolve({
             data: [
               {
-                id: '4ea60354-358e-4f13-8b5e-faf6d6b32d25',
-                decision: 'pass',
-                target_type: 'project',
-                target_id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
-                target_name: 'Pulse',
-                created_at: '2026-03-07T18:10:00.000Z',
+                id: '550e8400-e29b-41d4-a716-446655440099',
+                decision: 'like',
+                target_type: 'profile',
+                target_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+                target_name: null,
+                created_at: '2026-03-07T18:11:00.000Z',
                 read_at: null,
-                actor_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
-                actor_full_name: '',
-                actor_email: 'maya@example.com',
-                actor_avatar_path: '5ba6c5b5-5341-4638-a164-a3b0f9b88447/avatar',
-                actor_bio: 'Frontend builder looking for climate-tech teams.',
-                actor_skills: ['React', 'Supabase'],
+                actor_id: '1df30f65-9783-4f4e-b6a1-4a20c2f9dd50',
+                actor_full_name: 'Hidden Person',
+                actor_email: 'hidden@example.com',
+                actor_avatar_path: '1df30f65-9783-4f4e-b6a1-4a20c2f9dd50/avatar',
+                actor_bio: 'This should not be visible.',
+                actor_skills: ['Go', 'Kubernetes'],
                 actor_contact_links: {
-                  github: 'https://github.com/mayachen'
+                  email: 'hidden@example.com'
                 },
                 actor_projects: [
                   {
-                    id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
-                    name: 'Pulse',
-                    theme: 'Hackathon',
-                    description: 'Live team coordination board.',
-                    techStack: ['Node.js', 'Express']
+                    id: 'e60dc0a4-8038-4024-bd2f-26c6a7810c0a',
+                    name: 'Secret',
+                    theme: 'Private',
+                    description: 'This should not be visible.',
+                    techStack: ['Go']
                   }
                 ]
               }
@@ -717,33 +717,33 @@ describe('API', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual([
       {
-        id: '4ea60354-358e-4f13-8b5e-faf6d6b32d25',
-        decision: 'pass',
-        targetType: 'project',
-        createdAt: '2026-03-07T18:10:00.000Z',
+        id: '550e8400-e29b-41d4-a716-446655440099',
+        decision: 'like',
+        targetType: 'profile',
+        createdAt: '2026-03-07T18:11:00.000Z',
         readAt: null,
         actor: {
-          id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
-          fullName: 'maya',
-          avatarUrl: 'https://example.supabase.co/storage/v1/object/public/profile-images/5ba6c5b5-5341-4638-a164-a3b0f9b88447/avatar',
-          bio: 'Frontend builder looking for climate-tech teams.',
-          skills: ['React', 'Supabase'],
+          id: '1df30f65-9783-4f4e-b6a1-4a20c2f9dd50',
+          fullName: 'Hidden Person',
+          avatarUrl: 'https://example.supabase.co/storage/v1/object/public/profile-images/1df30f65-9783-4f4e-b6a1-4a20c2f9dd50/avatar',
+          bio: 'This should not be visible.',
+          skills: ['Go', 'Kubernetes'],
           projects: [
             {
-              id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
-              name: 'Pulse',
-              theme: 'Hackathon',
-              description: 'Live team coordination board.',
-              techStack: ['Node.js', 'Express']
+              id: 'e60dc0a4-8038-4024-bd2f-26c6a7810c0a',
+              name: 'Secret',
+              theme: 'Private',
+              description: 'This should not be visible.',
+              techStack: ['Go']
             }
           ],
           contactLinks: {
-            github: 'https://github.com/mayachen'
+            email: 'hidden@example.com'
           }
         },
         target: {
-          id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
-          name: 'Pulse'
+          id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+          name: null
         }
       }
     ]);

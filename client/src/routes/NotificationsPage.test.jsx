@@ -12,7 +12,7 @@ vi.mock('../context/useNotifications.js', () => ({
     notifications: [
       {
         id: '4ea60354-358e-4f13-8b5e-faf6d6b32d25',
-        decision: 'pass',
+        decision: 'like',
         targetType: 'project',
         createdAt: '2026-03-07T18:10:00.000Z',
         readAt: null,
@@ -57,7 +57,7 @@ describe('NotificationsPage', () => {
     notificationMocks.markAsRead.mockReset();
     notificationMocks.markAsRead.mockResolvedValue({
       id: '4ea60354-358e-4f13-8b5e-faf6d6b32d25',
-      decision: 'pass',
+      decision: 'like',
       targetType: 'project',
       createdAt: '2026-03-07T18:10:00.000Z',
       readAt: '2026-03-07T18:12:00.000Z',
@@ -101,7 +101,7 @@ describe('NotificationsPage', () => {
 
     const dialog = await screen.findByRole('dialog');
 
-    expect(within(dialog).getByText(/passed on your project pulse/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/liked your project pulse/i)).toBeInTheDocument();
     expect(within(dialog).getByText('Frontend builder looking for climate-tech teams.')).toBeInTheDocument();
     expect(within(dialog).getByText('https://github.com/mayachen')).toBeInTheDocument();
     expect(within(dialog).getByText('maya@example.com')).toBeInTheDocument();
