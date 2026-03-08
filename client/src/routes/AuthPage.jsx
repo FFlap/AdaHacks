@@ -1,6 +1,7 @@
 import { startTransition, useDeferredValue, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth.js';
+import logo from '../components/layout/logo.png';
 
 const PANELS = {
   signIn: {
@@ -65,6 +66,9 @@ export function AuthPage() {
     <div className="shell shell--auth">
       <section className="auth-wrap">
         <div className="card auth-card auth-card--compact">
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+            <img src={logo} alt="Logo" style={{ height: '120px', width: 'auto' }} />
+          </div>
           <div className="auth-card__header">
             <h1 className="auth-card__title">{PANELS[deferredMode].title}</h1>
           </div>
