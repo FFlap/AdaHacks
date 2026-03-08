@@ -1,106 +1,188 @@
 // server/src/routes/hackathons.js
 import express from 'express';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
+import puppeteer from 'puppeteer';
 
 const router = express.Router();
-const BASE = 'https://devpost.com';
-const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; AdaHacks/1.0)' };
 
-/**
- * Scrape one page of hackathons from Devpost.
- * Returns an array of hackathon objects shaped for HackathonSwipeCard.
- */
-async function scrapeHackathonPage(params) {
-  const url = `${BASE}/hackathons?${params}`;
-  const { data } = await axios.get(url, { headers: HEADERS, timeout: 12000 });
-  const $ = cheerio.load(data);
-  const results = [];
+let browser = null;
 
-  $('article.hackathon-tile, li.hackathon-tile').each((_, el) => {
-    const card = $(el);
+async function getBrowser() {
+  if (!browser) {
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+  }
+  return browser;
+}
 
-    const title = card.find('h2, .hackathon-name').first().text().trim();
-    const href  = card.find('a.tile-anchor, a.hackathon-link').attr('href') ?? '';
-    const url   = href.startsWith('http') ? href : BASE + href;
-    const id    = card.attr('data-challenge-id') ?? url;
+// ── Scrape MLH with Puppeteer (runs JS, gets real DOM) ───────────────────────
+async function fetchMLHHackathons() {
+  const b = await getBrowser();
+  const page = await b.newPage();
 
-    const thumbnail =
-      card.find('img.challenge-thumbnail, img').first().attr('src') ?? null;
+  await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    const prize =
-      card.find('.prize-amount, .prizes').first().text().trim() || null;
-
-    const deadline =
-      card.find('.submission-period, .deadline').first().text().trim() || null;
-
-    const participants =
-      card.find('.participants, .registrations-count').first().text().trim() || null;
-
-    const locationText =
-      card.find('.info-with-icon.location, .hackathon-location').first().text().trim() || 'Online';
-
-    const tags = [];
-    card.find('.theme-label, .challenge-label').each((_, t) => {
-      const txt = $(t).text().trim();
-      if (txt) tags.push(txt);
+  try {
+    await page.goto('https://mlh.io/seasons/2025/events', {
+      waitUntil: 'networkidle2',
+      timeout: 20000,
     });
 
-    if (!title) return; // skip empty cards
+    // Wait for event cards to appear
+    await page.waitForSelector('a.event, .event-wrapper, [class*="event"]', { timeout: 8000 })
+      .catch(() => console.log('MLH: selector wait timed out, parsing anyway'));
 
-    results.push({ id, title, url, thumbnail, prize, deadline, participants, location: locationText, tags });
-  });
+    const hackathons = await page.evaluate(() => {
+      const results = [];
 
-  return results;
+      // Try every plausible card container
+      const cards = document.querySelectorAll(
+        'a.event, .event-wrapper a, [class*="event-tile"], [class*="hackathon-event"]'
+      );
+
+      cards.forEach(card => {
+        const title = card.querySelector('h3, h2, [class*="name"], [class*="title"]')?.innerText?.trim();
+        if (!title) return;
+
+        const url   = card.href || card.querySelector('a')?.href || '';
+        const img   = card.querySelector('img')?.src ?? null;
+        const date  = card.querySelector('[class*="date"], time')?.innerText?.trim() ?? null;
+        const loc   = card.querySelector('[class*="location"], [class*="venue"], [class*="where"]')?.innerText?.trim() ?? null;
+
+        results.push({ title, url, img, date, loc });
+      });
+
+      return results;
+    });
+
+    return hackathons.map(h => ({
+      id:           h.url || h.title,
+      title:        h.title,
+      url:          h.url,
+      thumbnail:    h.img,
+      prize:        null,
+      deadline:     h.date,
+      participants: null,
+      location:     h.loc || 'See event page',
+      tags:         [],
+      isOnline:     h.loc?.toLowerCase().includes('online') ?? false,
+      organizerName: 'MLH',
+      source:       'mlh',
+    }));
+  } finally {
+    await page.close();
+  }
 }
 
-// ── Filter by interest tags client sent ────────────────────────────────────────
+// ── Scrape Devpost with Puppeteer ────────────────────────────────────────────
+async function fetchDevpostHackathons({ online = false, location = '' }) {
+  const b = await getBrowser();
+  const page = await b.newPage();
+
+  await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+  const params = new URLSearchParams({ 'status[]': 'open', 'order_by': 'deadline' });
+  if (online) params.append('challenge_type[]', 'online');
+  else if (location) params.set('search', location);
+
+  try {
+    await page.goto(`https://devpost.com/hackathons?${params}`, {
+      waitUntil: 'networkidle2',
+      timeout: 20000,
+    });
+
+    await page.waitForSelector('.hackathon-tile, article', { timeout: 8000 })
+      .catch(() => console.log('Devpost: selector wait timed out'));
+
+    const hackathons = await page.evaluate(() => {
+      const results = [];
+
+      document.querySelectorAll('.hackathon-tile, article[class*="hackathon"]').forEach(card => {
+        const title        = card.querySelector('h2, h3, .hackathon-name')?.innerText?.trim();
+        const url          = card.querySelector('a')?.href ?? '';
+        const img          = card.querySelector('img')?.src ?? null;
+        const prize        = card.querySelector('.prize-amount, .prizes')?.innerText?.trim() ?? null;
+        const deadline     = card.querySelector('.submission-period, .deadline')?.innerText?.trim() ?? null;
+        const participants = card.querySelector('.participants, .registrations-count')?.innerText?.trim() ?? null;
+        const location     = card.querySelector('.location, [class*="location"]')?.innerText?.trim() ?? null;
+        const tags         = [...card.querySelectorAll('.theme-label, [class*="theme"]')]
+                               .map(t => t.innerText.trim()).filter(Boolean);
+
+        if (!title) return;
+        results.push({ title, url, img, prize, deadline, participants, location, tags });
+      });
+
+      return results;
+    });
+
+    return hackathons.map((h, i) => ({
+      id:           h.url || String(i),
+      title:        h.title,
+      url:          h.url,
+      thumbnail:    h.img,
+      prize:        h.prize,
+      deadline:     h.deadline,
+      participants: h.participants,
+      location:     h.location || (online ? 'Online' : 'In-person'),
+      tags:         h.tags,
+      isOnline:     online || h.location?.toLowerCase().includes('online') || false,
+      organizerName: null,
+      source:       'devpost',
+    }));
+  } finally {
+    await page.close();
+  }
+}
+
 function matchesTags(hackathon, tags) {
   if (!tags.length) return true;
-  const haystack = [...hackathon.tags, hackathon.title].join(' ').toLowerCase();
-  return tags.some(t => haystack.includes(t.toLowerCase()));
+  const haystack = [...hackathon.tags, hackathon.title, hackathon.location]
+    .join(' ').toLowerCase();
+  return tags.some(t =>
+    haystack.includes(t.toLowerCase().replace(' / ', ' ').replace('/', ' '))
+  );
 }
 
-// ── GET /api/hackathons ────────────────────────────────────────────────────────
-// Query params:
-//   online=true          → remote/online hackathons
-//   location=Toronto     → in-person near a city
-//   tags=AI+ML,Health    → filter by interest tags (comma-separated)
-//   pages=2              → how many Devpost pages to scrape (default 2)
+// GET /api/hackathons
 router.get('/', async (req, res) => {
+  const { online, location, tags: tagsParam } = req.query;
+  const filterTags = tagsParam
+    ? tagsParam.split(',').map(t => t.trim()).filter(Boolean)
+    : [];
+
+  let hackathons = [];
+  let source = 'none';
+
+  // Try Devpost first (more hackathons), fall back to MLH
   try {
-    const { online, location, tags: tagsParam, pages: pagesParam } = req.query;
-    const maxPages = Math.min(parseInt(pagesParam) || 2, 5);
-    const filterTags = tagsParam ? tagsParam.split(',').map(t => t.trim()).filter(Boolean) : [];
-
-    const allResults = [];
-
-    for (let page = 1; page <= maxPages; page++) {
-      const params = new URLSearchParams({ page, status: 'open' });
-
-      if (online === 'true') {
-        // Devpost uses 'Online' as a theme for remote hacks
-        params.append('themes[]', 'Online');
-      } else if (location) {
-        params.set('search', location);
-      }
-
-      const pageResults = await scrapeHackathonPage(params);
-      if (!pageResults.length) break; // no more pages
-      allResults.push(...pageResults);
-    }
-
-    // Apply interest tag filter
-    const filtered = filterTags.length
-      ? allResults.filter(h => matchesTags(h, filterTags))
-      : allResults;
-
-    res.json({ hackathons: filtered, count: filtered.length });
+    hackathons = await fetchDevpostHackathons({
+      online: online === 'true',
+      location: location ?? '',
+    });
+    source = 'devpost';
+    console.log(`Devpost: fetched ${hackathons.length} hackathons`);
   } catch (err) {
-    console.error('Devpost scrape error:', err.message);
-    console.error(err.stack);
-    res.status(500).json({ error: err.message });
+    console.error('Devpost failed:', err.message);
+    try {
+      hackathons = await fetchMLHHackathons();
+      source = 'mlh';
+      console.log(`MLH fallback: fetched ${hackathons.length} hackathons`);
+    } catch (err2) {
+      console.error('MLH failed:', err2.message);
+      return res.status(502).json({ error: 'Unable to fetch hackathons. Try again later.' });
+    }
   }
+
+  let filtered = hackathons;
+  if (online === 'true') filtered = filtered.filter(h => h.isOnline);
+  if (filterTags.length) filtered = filtered.filter(h => matchesTags(h, filterTags));
+
+  res.json({ hackathons: filtered, count: filtered.length, source });
 });
+
+// Clean up browser on process exit
+process.on('exit', () => browser?.close());
+process.on('SIGINT', () => browser?.close());
 
 export default router;

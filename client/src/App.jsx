@@ -6,6 +6,7 @@ import { ProtectedRoute } from './routes/ProtectedRoute.jsx';
 import ProjectsPage from './routes/ProjectsPage.jsx';
 import PeoplePage from './routes/PeoplePage.jsx';
 import NotificationsPage from './routes/NotificationsPage.jsx';
+import HacksPage from './routes/HacksPage.jsx';
 import { NotificationsProvider } from './context/useNotifications.js';
 
 function ProtectedAppLayout() {
@@ -25,6 +26,7 @@ export function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedAppLayout />}>
             <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/hacks" element={<HacksPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/people" element={<PeoplePage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
