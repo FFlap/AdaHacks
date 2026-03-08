@@ -131,10 +131,7 @@ export default function ChatPage() {
         }}
       >
         <Box sx={{ mb: 3, textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.04em' }}>
-            Chat
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 1 }}>
+          <Typography color="text.secondary">
             Start from a match, then keep the conversation going here in real time.
           </Typography>
         </Box>
@@ -161,7 +158,7 @@ export default function ChatPage() {
             sx={{
               borderRadius: 5,
               border: '1px solid #e5e7eb',
-              background: 'linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%)',
+              backgroundColor: '#ffffff',
               overflow: 'hidden'
             }}
           >
@@ -243,7 +240,7 @@ export default function ChatPage() {
               minHeight: 620,
               borderRadius: 5,
               border: '1px solid #e5e7eb',
-              background: 'linear-gradient(180deg, #ffffff 0%, #f7fafc 100%)',
+              backgroundColor: '#ffffff',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden'
@@ -267,7 +264,7 @@ export default function ChatPage() {
                     px: 3,
                     py: 2.5,
                     borderBottom: '1px solid #edf2f7',
-                    background: 'linear-gradient(135deg, #f7fbff 0%, #ffffff 55%, #fff3f0 100%)'
+                    backgroundColor: '#ffffff'
                   }}
                 >
                   <Stack direction="row" spacing={2} alignItems="center">
