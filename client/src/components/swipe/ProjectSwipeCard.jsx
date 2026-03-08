@@ -107,17 +107,7 @@ export default function ProjectSwipeCard({ project, onOpenSummary }) {
 
         <Divider sx={{ borderColor: line }} />
 
-        {/* Description */}
-        <Box>
-          <SectionLabel>Description</SectionLabel>
-          <Typography sx={{ fontSize: 16, color: project.description ? ink : muted, lineHeight: 1.75 }}>
-            {project.description || 'No description added yet.'}
-          </Typography>
-        </Box>
-
-        <Divider sx={{ borderColor: line }} />
-
-        {/* Tech Stack */}
+         {/* Tech Stack */}
         <Box>
           <SectionLabel>Tech Stack</SectionLabel>
           <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
@@ -135,6 +125,20 @@ export default function ProjectSwipeCard({ project, onOpenSummary }) {
             )}
           </Stack>
         </Box>
+
+         <Divider sx={{ borderColor: line }} />
+
+        {/* Description */}
+        <Box>
+          <SectionLabel>Description</SectionLabel>
+          <Typography sx={{ fontSize: 16, color: project.description ? ink : muted, lineHeight: 1.75 }}>
+            {project.description || 'No description added yet.'}
+          </Typography>
+        </Box>
+
+        <Divider sx={{ borderColor: line }} />
+
+       
       </CardContent>
     </Card>
   );
