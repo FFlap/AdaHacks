@@ -80,6 +80,7 @@ export default function NotificationsPage() {
       <Container
         maxWidth="xl"
         sx={{
+          py: 4,
           px: {
             xs: 2,
             sm: 3,
@@ -88,10 +89,7 @@ export default function NotificationsPage() {
         }}
       >
         <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.03em' }}>
-            Notifications
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 1 }}>
+          <Typography color="text.secondary">
             Every pass or like on your profile and projects shows up here.
           </Typography>
         </Box>
@@ -99,7 +97,7 @@ export default function NotificationsPage() {
         {loading ? (
           <Box sx={{ mt: 8, display: 'grid', placeItems: 'center', gap: 2 }}>
             <CircularProgress color="inherit" size={28} />
-            <Typography color="text.secondary">Loading notifications...</Typography>
+            <Typography color="text.secondary">Loading matches...</Typography>
           </Box>
         ) : null}
 
@@ -120,7 +118,7 @@ export default function NotificationsPage() {
               py: 7
             }}
           >
-            <Typography variant="h6">No notifications yet</Typography>
+            <Typography variant="h6">No matches yet</Typography>
             <Typography color="text.secondary" sx={{ mt: 1 }}>
               When someone swipes on your profile or one of your projects, it will show up here.
             </Typography>
@@ -171,7 +169,7 @@ export default function NotificationsPage() {
                   </Box>
                   {!notification.readAt ? (
                     <Box
-                      aria-label="Unread notification"
+                      aria-label="Unread match"
                       sx={{
                         width: 10,
                         height: 10,
@@ -216,7 +214,7 @@ export default function NotificationsPage() {
                         color: '#6b6b6b'
                       }}
                     >
-                      Notification
+                      Match
                     </Typography>
                     <Typography variant="h4" sx={{ mt: 1, fontWeight: 700, letterSpacing: '-0.03em' }}>
                       {expandedNotification.actor.fullName}
@@ -225,7 +223,7 @@ export default function NotificationsPage() {
                       {formatNotificationMessage(expandedNotification)}
                     </Typography>
                   </Box>
-                  <IconButton aria-label="Close notification" onClick={() => setExpandedNotification(null)}>
+                  <IconButton aria-label="Close match" onClick={() => setExpandedNotification(null)}>
                     <CloseIcon />
                   </IconButton>
                 </Stack>

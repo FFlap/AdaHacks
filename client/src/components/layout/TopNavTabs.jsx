@@ -5,7 +5,7 @@ import { useNotifications } from "../../context/useNotifications.js";
 const navItems = [
   { label: "Projects", value: "/projects" },
   { label: "People", value: "/people" },
-  { label: "Notifications", value: "/notifications" },
+  { label: "Matches", value: "/notifications" },
   { label: "Profile", value: "/profile" },
 ];
 
