@@ -11,7 +11,7 @@ export default function AppShell({ children }) {
     >
       <Container maxWidth="xl">
         <TopNavTabs />
-        <Box sx={{ mt: 4 }}>{children}</Box>
+        <Box sx={{ mt: 1 }}>{children}</Box>
       </Container>
     </Box>
   );

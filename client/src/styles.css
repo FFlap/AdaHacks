@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 :root {
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Roboto', sans-serif;
   color: #0a0a0a;
   background: #ffffff;
   line-height: 1.5;
-  font-weight: 500;
+  font-weight: 400;
   color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -523,8 +523,9 @@ h2 {
 }
 
 .button--secondary {
-  background: #f3f3f3;
+    background: transparent;
   color: var(--ink);
+  border: 1.5px solid var(--line);
 }
 
 .button--inline {

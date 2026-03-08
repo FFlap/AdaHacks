@@ -71,10 +71,10 @@ export default function TopNavTabs() {
                 minHeight: 48,
                 borderRadius: "999px",
                 fontWeight: 600,
-                color: "#374151",
+                color: "#631D20",
                 "&.Mui-selected": {
-                  backgroundColor: "#eef2ff",
-                  color: "#4338ca",
+                  backgroundColor: "#ffdddf",
+                  color: "#631D20",
                 },
               }}
             />

@@ -83,10 +83,7 @@ export default function PeoplePage() {
   return (
     <AppShell>
       <Box sx={{ p: 4 }}>
-        <Typography variant="h4" align="center" sx={{ mb: 1 }}>
-          People
-        </Typography>
-        <Typography align="center" color="text.secondary" sx={{ mb: 4 }}>
+        <Typography align="center" color="text.secondary" sx={{ mb: 5 }}>
           Swipe through builder profiles to find collaborators with the right stack and projects.
         </Typography>
 

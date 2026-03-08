@@ -158,9 +158,6 @@ export default function ProjectsPage() {
   return (
     <AppShell>
       <Box sx={{ p: 4 }}>
-        <Typography variant="h4" align="center" sx={{ mb: 1 }}>
-          Projects
-        </Typography>
         <Typography align="center" color="text.secondary" sx={{ mb: 4 }}>
           Swipe through projects from other builders to find something to join.
         </Typography>
