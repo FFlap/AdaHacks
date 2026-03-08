@@ -93,6 +93,62 @@ function createProjectsTable({ existingIds = [], rows = [] } = {}) {
   };
 }
 
+function createChatThreadsTable({
+  existingThreadByPair = null,
+  createdThread = null,
+  insertError = null,
+  threadById = null
+} = {}) {
+  return {
+    select: vi.fn(() => ({
+      eq: vi.fn((column) => {
+        if (column === 'user_a_id') {
+          return {
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: existingThreadByPair ? { id: existingThreadByPair.id } : null,
+                error: null
+              })
+            })
+          };
+        }
+
+        if (column === 'id') {
+          return {
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: threadById,
+              error: null
+            })
+          };
+        }
+
+        throw new Error(`Unexpected chat_threads select column: ${column}`);
+      })
+    })),
+    insert: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: createdThread,
+          error: insertError
+        })
+      })
+    })
+  };
+}
+
+function createChatMessagesTable({ insertedMessage = null, insertError = null } = {}) {
+  return {
+    insert: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: insertedMessage,
+          error: insertError
+        })
+      })
+    })
+  };
+}
+
 const env = {
   port: 4010,
   clientOrigin: 'http://localhost:5173',
@@ -934,5 +990,504 @@ describe('API', () => {
         tech_stack: ['Node.js', 'Express']
       }
     ]);
+  });
+
+  it('starts or reuses a chat from a like notification', async () => {
+    const authClient = createMockSupabaseClient();
+    authClient.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+          email: 'ada@example.com'
+        }
+      },
+      error: null
+    });
+
+    const swipesTable = {
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: {
+                id: '550e8400-e29b-41d4-a716-446655440099',
+                actor_user_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+                target_type: 'project',
+                target_id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+                target_user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+                decision: 'like'
+              },
+              error: null
+            })
+          })
+        })
+      })
+    };
+    const chatThreadsTable = createChatThreadsTable({
+      createdThread: {
+        id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26'
+      }
+    });
+    const requestClient = {
+      from: vi.fn((table) => {
+        if (table === 'swipes') {
+          return swipesTable;
+        }
+
+        if (table === 'chat_threads') {
+          return chatThreadsTable;
+        }
+
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+      rpc: vi.fn((fn) => {
+        if (fn === 'list_chat_threads') {
+          return Promise.resolve({
+            data: [
+              {
+                id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26',
+                counterpart_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+                counterpart_full_name: 'Maya Chen',
+                counterpart_email: 'maya@example.com',
+                counterpart_avatar_path: '5ba6c5b5-5341-4638-a164-a3b0f9b88447/avatar',
+                initiated_by_user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+                source_notification_id: '550e8400-e29b-41d4-a716-446655440099',
+                source_target_type: 'project',
+                source_target_id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+                source_target_name: 'Pulse',
+                created_at: '2026-03-07T18:11:00.000Z',
+                updated_at: '2026-03-07T18:11:00.000Z',
+                last_message_at: '2026-03-07T18:11:00.000Z',
+                latest_message_preview: null,
+                latest_message_sender_id: null
+              }
+            ],
+            error: null
+          });
+        }
+
+        throw new Error(`Unexpected rpc: ${fn}`);
+      })
+    };
+
+    const app = createApp({
+      env,
+      authClientFactory: () => authClient,
+      requestClientFactory: () => requestClient
+    });
+
+    const response = await request(app)
+      .post('/api/v1/notifications/550e8400-e29b-41d4-a716-446655440099/chat')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(response.status).toBe(200);
+    expect(chatThreadsTable.insert).toHaveBeenCalledWith({
+      user_a_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      user_b_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+      initiated_by_user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      source_swipe_id: '550e8400-e29b-41d4-a716-446655440099',
+      source_target_type: 'project',
+      source_target_id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812'
+    });
+    expect(response.body).toEqual({
+      id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26',
+      counterpart: {
+        id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+        fullName: 'Maya Chen',
+        avatarUrl: 'https://example.supabase.co/storage/v1/object/public/profile-images/5ba6c5b5-5341-4638-a164-a3b0f9b88447/avatar'
+      },
+      initiatedByUserId: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      sourceNotificationId: '550e8400-e29b-41d4-a716-446655440099',
+      sourceTargetType: 'project',
+      sourceTargetId: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+      sourceTargetName: 'Pulse',
+      createdAt: '2026-03-07T18:11:00.000Z',
+      updatedAt: '2026-03-07T18:11:00.000Z',
+      lastMessageAt: '2026-03-07T18:11:00.000Z',
+      latestMessagePreview: null,
+      latestMessageSenderId: null
+    });
+  });
+
+  it('lists chat threads for the authenticated participant', async () => {
+    const authClient = createMockSupabaseClient();
+    authClient.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+          email: 'ada@example.com'
+        }
+      },
+      error: null
+    });
+
+    const requestClient = {
+      rpc: vi.fn((fn) => {
+        if (fn === 'list_chat_threads') {
+          return Promise.resolve({
+            data: [
+              {
+                id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26',
+                counterpart_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+                counterpart_full_name: '',
+                counterpart_email: 'maya@example.com',
+                counterpart_avatar_path: null,
+                initiated_by_user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+                source_notification_id: '550e8400-e29b-41d4-a716-446655440099',
+                source_target_type: 'profile',
+                source_target_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+                source_target_name: null,
+                created_at: '2026-03-07T18:11:00.000Z',
+                updated_at: '2026-03-07T18:13:00.000Z',
+                last_message_at: '2026-03-07T18:13:00.000Z',
+                latest_message_preview: 'Yes, I am interested.',
+                latest_message_sender_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620'
+              }
+            ],
+            error: null
+          });
+        }
+
+        throw new Error(`Unexpected rpc: ${fn}`);
+      })
+    };
+
+    const app = createApp({
+      env,
+      authClientFactory: () => authClient,
+      requestClientFactory: () => requestClient
+    });
+
+    const response = await request(app)
+      .get('/api/v1/chats')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([
+      {
+        id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26',
+        counterpart: {
+          id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+          fullName: 'maya',
+          avatarUrl: null
+        },
+        initiatedByUserId: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+        sourceNotificationId: '550e8400-e29b-41d4-a716-446655440099',
+        sourceTargetType: 'profile',
+        sourceTargetId: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+        sourceTargetName: null,
+        createdAt: '2026-03-07T18:11:00.000Z',
+        updatedAt: '2026-03-07T18:13:00.000Z',
+        lastMessageAt: '2026-03-07T18:13:00.000Z',
+        latestMessagePreview: 'Yes, I am interested.',
+        latestMessageSenderId: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620'
+      }
+    ]);
+  });
+
+  it('reuses an existing chat thread for the same user pair', async () => {
+    const authClient = createMockSupabaseClient();
+    authClient.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+          email: 'ada@example.com'
+        }
+      },
+      error: null
+    });
+
+    const swipesTable = {
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: {
+                id: '550e8400-e29b-41d4-a716-446655440099',
+                actor_user_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+                target_type: 'profile',
+                target_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+                target_user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+                decision: 'like'
+              },
+              error: null
+            })
+          })
+        })
+      })
+    };
+    const chatThreadsTable = createChatThreadsTable({
+      existingThreadByPair: {
+        id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26'
+      }
+    });
+    const requestClient = {
+      from: vi.fn((table) => {
+        if (table === 'swipes') {
+          return swipesTable;
+        }
+
+        if (table === 'chat_threads') {
+          return chatThreadsTable;
+        }
+
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+      rpc: vi.fn((fn) => {
+        if (fn === 'list_chat_threads') {
+          return Promise.resolve({
+            data: [
+              {
+                id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26',
+                counterpart_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+                counterpart_full_name: 'Maya Chen',
+                counterpart_email: 'maya@example.com',
+                counterpart_avatar_path: null,
+                initiated_by_user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+                source_notification_id: '11111111-1111-4111-8111-111111111111',
+                source_target_type: 'project',
+                source_target_id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+                source_target_name: 'Pulse',
+                created_at: '2026-03-07T18:11:00.000Z',
+                updated_at: '2026-03-07T18:13:00.000Z',
+                last_message_at: '2026-03-07T18:13:00.000Z',
+                latest_message_preview: 'Existing thread',
+                latest_message_sender_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447'
+              }
+            ],
+            error: null
+          });
+        }
+
+        throw new Error(`Unexpected rpc: ${fn}`);
+      })
+    };
+
+    const app = createApp({
+      env,
+      authClientFactory: () => authClient,
+      requestClientFactory: () => requestClient
+    });
+
+    const response = await request(app)
+      .post('/api/v1/notifications/550e8400-e29b-41d4-a716-446655440099/chat')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(response.status).toBe(200);
+    expect(chatThreadsTable.insert).not.toHaveBeenCalled();
+    expect(response.body.id).toBe('4ea60354-358e-4f13-8b5e-faf6d6b32d26');
+  });
+
+  it('rejects chat start for a pass notification', async () => {
+    const authClient = createMockSupabaseClient();
+    authClient.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+          email: 'ada@example.com'
+        }
+      },
+      error: null
+    });
+
+    const requestClient = {
+      from: vi.fn(() => ({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: {
+                  id: '550e8400-e29b-41d4-a716-446655440099',
+                  actor_user_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+                  target_type: 'profile',
+                  target_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+                  target_user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+                  decision: 'pass'
+                },
+                error: null
+              })
+            })
+          })
+        })
+      }))
+    };
+
+    const app = createApp({
+      env,
+      authClientFactory: () => authClient,
+      requestClientFactory: () => requestClient
+    });
+
+    const response = await request(app)
+      .post('/api/v1/notifications/550e8400-e29b-41d4-a716-446655440099/chat')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('chat_not_available');
+  });
+
+  it('lists chat messages and sends a new one for participants', async () => {
+    const authClient = createMockSupabaseClient();
+    authClient.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+          email: 'ada@example.com'
+        }
+      },
+      error: null
+    });
+
+    const chatThreadsTable = createChatThreadsTable({
+      threadById: {
+        id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26'
+      }
+    });
+    const chatMessagesTable = createChatMessagesTable({
+      insertedMessage: {
+        id: '3c563cb7-03e8-45fb-bf8d-1d74d0064d77',
+        thread_id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26',
+        sender_user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+        body: 'Yes, I am interested.',
+        created_at: '2026-03-07T18:13:00.000Z'
+      }
+    });
+    const requestClient = {
+      from: vi.fn((table) => {
+        if (table === 'chat_threads') {
+          return chatThreadsTable;
+        }
+
+        if (table === 'chat_messages') {
+          return chatMessagesTable;
+        }
+
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+      rpc: vi.fn((fn) => {
+        if (fn === 'list_chat_threads') {
+          return Promise.resolve({
+            data: [
+              {
+                id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26',
+                counterpart_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+                counterpart_full_name: 'Maya Chen',
+                counterpart_email: 'maya@example.com',
+                counterpart_avatar_path: '5ba6c5b5-5341-4638-a164-a3b0f9b88447/avatar',
+                initiated_by_user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+                source_notification_id: '550e8400-e29b-41d4-a716-446655440099',
+                source_target_type: 'project',
+                source_target_id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+                source_target_name: 'Pulse',
+                created_at: '2026-03-07T18:11:00.000Z',
+                updated_at: '2026-03-07T18:13:00.000Z',
+                last_message_at: '2026-03-07T18:13:00.000Z',
+                latest_message_preview: 'Yes, I am interested.',
+                latest_message_sender_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620'
+              }
+            ],
+            error: null
+          });
+        }
+
+        if (fn === 'list_chat_messages') {
+          return Promise.resolve({
+            data: [
+              {
+                id: '7bc24459-cc77-48d0-8e1d-6bd8544e4c9b',
+                thread_id: '4ea60354-358e-4f13-8b5e-faf6d6b32d26',
+                sender_user_id: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+                body: 'Hi Ada, want to chat about Pulse?',
+                created_at: '2026-03-07T18:12:00.000Z'
+              }
+            ],
+            error: null
+          });
+        }
+
+        throw new Error(`Unexpected rpc: ${fn}`);
+      })
+    };
+
+    const app = createApp({
+      env,
+      authClientFactory: () => authClient,
+      requestClientFactory: () => requestClient
+    });
+
+    const messagesResponse = await request(app)
+      .get('/api/v1/chats/4ea60354-358e-4f13-8b5e-faf6d6b32d26/messages')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(messagesResponse.status).toBe(200);
+    expect(messagesResponse.body.messages).toEqual([
+      {
+        id: '7bc24459-cc77-48d0-8e1d-6bd8544e4c9b',
+        threadId: '4ea60354-358e-4f13-8b5e-faf6d6b32d26',
+        senderUserId: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+        body: 'Hi Ada, want to chat about Pulse?',
+        createdAt: '2026-03-07T18:12:00.000Z'
+      }
+    ]);
+
+    const sendResponse = await request(app)
+      .post('/api/v1/chats/4ea60354-358e-4f13-8b5e-faf6d6b32d26/messages')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ body: 'Yes, I am interested.' });
+
+    expect(sendResponse.status).toBe(201);
+    expect(sendResponse.body).toEqual({
+      id: '3c563cb7-03e8-45fb-bf8d-1d74d0064d77',
+      threadId: '4ea60354-358e-4f13-8b5e-faf6d6b32d26',
+      senderUserId: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      body: 'Yes, I am interested.',
+      createdAt: '2026-03-07T18:13:00.000Z'
+    });
+  });
+
+  it('rejects sending a chat message when the user is not a participant', async () => {
+    const authClient = createMockSupabaseClient();
+    authClient.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+          email: 'ada@example.com'
+        }
+      },
+      error: null
+    });
+
+    const chatThreadsTable = createChatThreadsTable({
+      threadById: null
+    });
+    const chatMessagesTable = createChatMessagesTable();
+    const requestClient = {
+      from: vi.fn((table) => {
+        if (table === 'chat_threads') {
+          return chatThreadsTable;
+        }
+
+        if (table === 'chat_messages') {
+          return chatMessagesTable;
+        }
+
+        throw new Error(`Unexpected table: ${table}`);
+      })
+    };
+
+    const app = createApp({
+      env,
+      authClientFactory: () => authClient,
+      requestClientFactory: () => requestClient
+    });
+
+    const response = await request(app)
+      .post('/api/v1/chats/4ea60354-358e-4f13-8b5e-faf6d6b32d26/messages')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ body: 'Hello?' });
+
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe('chat_thread_not_found');
+    expect(chatMessagesTable.insert).not.toHaveBeenCalled();
   });
 });

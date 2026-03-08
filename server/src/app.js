@@ -2,6 +2,8 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import {
+  chatMessagesResponseSchema,
+  chatThreadsSchema,
   errorResponseSchema,
   meResponseSchema,
   notificationReadResponseSchema,
@@ -9,10 +11,19 @@ import {
   peopleFeedSchema,
   projectAnalysisSchema,
   projectFeedSchema,
+  sendChatMessageInputSchema,
+  sendChatMessageResponseSchema,
+  startChatResponseSchema,
   swipeInputSchema,
   swipeResponseSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
+import {
+  listChatMessages,
+  listChats,
+  sendChatMessage,
+  startChatFromNotification
+} from './chat.js';
 import { getEnv } from './env.js';
 import { HttpError, toErrorResponse } from './errors.js';
 import {
@@ -227,6 +238,61 @@ export function createApp({
       );
 
       response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/v1/chats', async (request, response, next) => {
+    try {
+      const client = request.supabase;
+      const payload = chatThreadsSchema.parse(
+        await listChats(client, env.supabaseUrl)
+      );
+
+      response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/v1/chats/:threadId/messages', async (request, response, next) => {
+    try {
+      const client = request.supabase;
+      const payload = chatMessagesResponseSchema.parse(
+        await listChatMessages(client, env.supabaseUrl, request.params.threadId)
+      );
+
+      response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/v1/notifications/:notificationId/chat', async (request, response, next) => {
+    try {
+      const client = request.supabase;
+      const { user } = request.auth;
+      const payload = startChatResponseSchema.parse(
+        await startChatFromNotification(client, env.supabaseUrl, request.params.notificationId, user.id)
+      );
+
+      response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/v1/chats/:threadId/messages', async (request, response, next) => {
+    try {
+      const client = request.supabase;
+      const { user } = request.auth;
+      const input = sendChatMessageInputSchema.parse(request.body);
+      const payload = sendChatMessageResponseSchema.parse(
+        await sendChatMessage(client, request.params.threadId, user.id, input)
+      );
+
+      response.status(201).json(payload);
     } catch (error) {
       next(error);
     }
