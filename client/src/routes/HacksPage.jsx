@@ -19,15 +19,22 @@ import WifiIcon from '@mui/icons-material/Wifi';
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CloseIcon from '@mui/icons-material/Close';
-
 import SwipeDeck from '../components/swipe/SwipeDeck';
 import SwipeActionButtons from '../components/swipe/SwipeActionButtons';
 import HackathonSwipeCard from '../components/swipe/Hackathonswipecard';
 import AppShell from '../components/layout/AppShell.jsx';
 
 const INTEREST_TAGS = [
-  'AI / ML', 'Web3', 'Health', 'Climate', 'Education',
-  'Fintech', 'Social Good', 'Gaming', 'DevTools', 'Mobile',
+  'AI / ML',
+  'Web3',
+  'Health',
+  'Climate',
+  'Education',
+  'Fintech',
+  'Social Good',
+  'Gaming',
+  'DevTools',
+  'Mobile',
 ];
 
 const STORAGE_KEY = 'adahacks:saved_hackathons';
@@ -41,6 +48,7 @@ function loadSaved() {
     return [];
   }
 }
+
 export default function HacksPage() {
   const [viewer, setViewer] = useState(null);
 
@@ -64,16 +72,30 @@ export default function HacksPage() {
       try {
         const token = localStorage.getItem('adahacks:token');
 
+        if (!token) {
+          setViewer(null);
+          return;
+        }
+
         const res = await fetch('/api/v1/me', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
 
-        if (!res.ok) throw new Error('Failed to load profile');
+        if (res.status === 401) {
+          setViewer(null);
+          return;
+        }
+
+        if (!res.ok) {
+          setViewer(null);
+          return;
+        }
 
         const data = await res.json();
         setViewer(data.profile ?? null);
-      } catch (err) {
-        console.error(err);
+      } catch {
         setViewer(null);
       }
     };
@@ -101,7 +123,9 @@ export default function HacksPage() {
       }
 
       const res = await fetch(`/api/hackathons?${params}`);
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`Server error ${res.status}`);
+      }
 
       const data = await res.json();
 
@@ -303,6 +327,7 @@ export default function HacksPage() {
                 <HackathonSwipeCard
                   hackathon={item}
                   viewer={viewer}
+                  selectedTags={selectedTags}
                 />
               )}
             />
@@ -358,9 +383,7 @@ export default function HacksPage() {
                       />
                     )}
 
-                    <Typography sx={{ fontWeight: 700, color: '#111' }}>
-                      {h.title}
-                    </Typography>
+                    <Typography sx={{ fontWeight: 700, color: '#111' }}>{h.title}</Typography>
 
                     {h.deadline && (
                       <Typography color="text.secondary" sx={{ mt: 0.25, fontSize: 13 }}>
@@ -375,12 +398,14 @@ export default function HacksPage() {
                     )}
 
                     {h.prize && (
-                      <Typography sx={{ mt: 0.75, fontSize: 13, fontWeight: 600, color: '#374151' }}>
+                      <Typography
+                        sx={{ mt: 0.75, fontSize: 13, fontWeight: 600, color: '#374151' }}
+                      >
                         💰 {h.prize}
                       </Typography>
                     )}
 
-                    <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                    <Stack direction="row" spacing={1} sx={{ mt: 2, alignItems: 'center' }}>
                       {h.url && (
                         <Button
                           size="small"
@@ -426,6 +451,17 @@ export default function HacksPage() {
                       >
                         Remove
                       </Button>
+
+                      <Box sx={{ flexGrow: 1 }} />
+
+                      <Box>
+                        <HackathonSwipeCard
+                          hackathon={h}
+                          viewer={viewer}
+                          selectedTags={selectedTags}
+                          iconOnly
+                        />
+                      </Box>
                     </Stack>
                   </CardContent>
                 </Card>

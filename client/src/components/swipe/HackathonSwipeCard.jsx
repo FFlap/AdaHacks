@@ -19,8 +19,22 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
-function HackathonDetailsDialog({ open, hackathon, onClose, analysis, loading }) {
+function uniqueTags(tags) {
+  return [...new Set(Array.isArray(tags) ? tags.filter(Boolean) : [])];
+}
+
+function HackathonDetailsDialog({
+  open,
+  hackathon,
+  onClose,
+  analysis,
+  loading,
+  teammates = [],
+  teammatesLoading = false,
+}) {
   if (!hackathon) return null;
+
+  const dedupedTags = uniqueTags(hackathon.tags);
 
   return (
     <Dialog
@@ -42,7 +56,12 @@ function HackathonDetailsDialog({ open, hackathon, onClose, analysis, loading })
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
             <Box>
               <Typography
-                sx={{ fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#6b6b6b' }}
+                sx={{
+                  fontSize: 12,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: '#6b6b6b',
+                }}
               >
                 Hackathon details
               </Typography>
@@ -95,9 +114,7 @@ function HackathonDetailsDialog({ open, hackathon, onClose, analysis, loading })
           <Divider />
 
           <Box>
-            <Typography sx={{ fontWeight: 600, color: '#111111', mb: 1 }}>
-              AI summary
-            </Typography>
+            <Typography sx={{ fontWeight: 600, color: '#111111', mb: 1 }}>AI summary</Typography>
 
             {loading ? (
               <Stack direction="row" spacing={1} alignItems="center">
@@ -107,15 +124,14 @@ function HackathonDetailsDialog({ open, hackathon, onClose, analysis, loading })
                 </Typography>
               </Stack>
             ) : analysis?.summary ? (
-              <Typography sx={{ color: '#303030', lineHeight: 1.7 }}>
-                {analysis.summary}
-              </Typography>
+              <Typography sx={{ color: '#303030', lineHeight: 1.7 }}>{analysis.summary}</Typography>
             ) : (
               <Typography variant="body2" color="text.secondary">
                 Summary unavailable.
               </Typography>
             )}
           </Box>
+
 
           {hackathon.prize && (
             <>
@@ -131,7 +147,7 @@ function HackathonDetailsDialog({ open, hackathon, onClose, analysis, loading })
             </>
           )}
 
-          {hackathon.tags?.length > 0 && (
+          {dedupedTags.length > 0 && (
             <>
               <Divider />
               <Box>
@@ -139,9 +155,9 @@ function HackathonDetailsDialog({ open, hackathon, onClose, analysis, loading })
                   Themes
                 </Typography>
                 <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                  {hackathon.tags.map((tag) => (
+                  {dedupedTags.map((tag, index) => (
                     <Chip
-                      key={tag}
+                      key={`${hackathon.id ?? hackathon.title}-theme-${tag}-${index}`}
                       label={tag}
                       variant="outlined"
                       sx={{
@@ -187,47 +203,85 @@ function HackathonDetailsDialog({ open, hackathon, onClose, analysis, loading })
   );
 }
 
-export default function HackathonSwipeCard({ hackathon, viewer }) {
+export default function HackathonSwipeCard({
+  hackathon,
+  viewer,
+  selectedTags = [],
+  iconOnly = false,
+}) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [teammates, setTeammates] = useState([]);
+  const [teammatesLoading, setTeammatesLoading] = useState(false);
 
   const handleOpenDetails = async (e) => {
     e.stopPropagation();
     setDialogOpen(true);
 
-    if (analysis || loading) return;
+    if (!analysis && !loading) {
+      try {
+        setLoading(true);
 
-    try {
-      setLoading(true);
+        const response = await fetch('/api/hackathons/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            hackathon,
+            viewer,
+          }),
+        });
 
-      const response = await fetch('/api/hackathons/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          hackathon,
-          viewer,
-        }),
-      });
+        const data = await response.json();
 
-      const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error || 'Failed to analyze hackathon.');
+        }
 
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to analyze hackathon.');
+        setAnalysis({
+          summary: data?.summary ?? '',
+        });
+      } catch (error) {
+        console.error(error);
+        setAnalysis({
+          summary: 'Unable to generate a summary for this hackathon right now.',
+        });
+      } finally {
+        setLoading(false);
       }
-
-      setAnalysis({
-        summary: data?.summary ?? '',
-      });
-    } catch (error) {
-      console.error(error);
-      setAnalysis({
-        summary: 'Unable to generate a summary for this hackathon right now.',
-      });
-    } finally {
-      setLoading(false);
     }
   };
+
+  const dedupedTags = uniqueTags(hackathon.tags);
+
+  if (iconOnly) {
+    return (
+      <>
+        <IconButton
+          aria-label="View hackathon details"
+          onClick={handleOpenDetails}
+          size="small"
+          sx={{
+            border: '1px solid #c7d0ef',
+            backgroundColor: 'rgba(255,255,255,0.6)',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.9)' },
+          }}
+        >
+          <InfoOutlinedIcon sx={{ fontSize: 18, color: '#111' }} />
+        </IconButton>
+
+        <HackathonDetailsDialog
+          open={dialogOpen}
+          hackathon={hackathon}
+          onClose={() => setDialogOpen(false)}
+          analysis={analysis}
+          loading={loading}
+          teammates={teammates}
+          teammatesLoading={teammatesLoading}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -335,11 +389,11 @@ export default function HackathonSwipeCard({ hackathon, viewer }) {
             )}
           </Stack>
 
-          {hackathon.tags?.length > 0 && (
+          {dedupedTags.length > 0 && (
             <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
-              {hackathon.tags.map((tag) => (
+              {dedupedTags.map((tag, index) => (
                 <Chip
-                  key={tag}
+                  key={`${hackathon.id ?? hackathon.title}-${tag}-${index}`}
                   label={tag}
                   size="small"
                   variant="outlined"
@@ -357,6 +411,8 @@ export default function HackathonSwipeCard({ hackathon, viewer }) {
         onClose={() => setDialogOpen(false)}
         analysis={analysis}
         loading={loading}
+        teammates={teammates}
+        teammatesLoading={teammatesLoading}
       />
     </>
   );
