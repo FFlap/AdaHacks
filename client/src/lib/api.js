@@ -1,4 +1,6 @@
 import {
+  chatMessagesResponseSchema,
+  chatThreadsSchema,
   errorResponseSchema,
   meResponseSchema,
   notificationReadResponseSchema,
@@ -6,6 +8,9 @@ import {
   peopleFeedSchema,
   projectAnalysisSchema,
   projectFeedSchema,
+  sendChatMessageInputSchema,
+  sendChatMessageResponseSchema,
+  startChatResponseSchema,
   swipeInputSchema,
   swipeResponseSchema,
   updateProfileInputSchema
@@ -93,4 +98,34 @@ export async function markNotificationRead(token, notificationId) {
     token
   });
   return notificationReadResponseSchema.parse(payload);
+}
+
+export async function getChats(token) {
+  const payload = await request('/api/v1/chats', { token });
+  return chatThreadsSchema.parse(payload);
+}
+
+export async function getChatMessages(token, threadId) {
+  const payload = await request(`/api/v1/chats/${threadId}/messages`, { token });
+  return chatMessagesResponseSchema.parse(payload);
+}
+
+export async function startChatFromNotification(token, notificationId) {
+  const payload = await request(`/api/v1/notifications/${notificationId}/chat`, {
+    method: 'POST',
+    token
+  });
+
+  return startChatResponseSchema.parse(payload);
+}
+
+export async function sendChatMessage(token, threadId, body) {
+  const payload = sendChatMessageInputSchema.parse({ body });
+  const response = await request(`/api/v1/chats/${threadId}/messages`, {
+    method: 'POST',
+    token,
+    body: payload
+  });
+
+  return sendChatMessageResponseSchema.parse(response);
 }

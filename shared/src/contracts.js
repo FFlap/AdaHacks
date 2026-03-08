@@ -121,6 +121,51 @@ export const notificationReadResponseSchema = z.object({
   readAt: z.string().datetime({ offset: true })
 });
 
+export const chatThreadSchema = z.object({
+  id: z.uuid(),
+  counterpart: z.object({
+    id: z.uuid(),
+    fullName: z.string().trim().min(1).max(80),
+    avatarUrl: z.url().nullable()
+  }),
+  initiatedByUserId: z.uuid(),
+  sourceNotificationId: z.uuid(),
+  sourceTargetType: swipeTargetTypeSchema,
+  sourceTargetId: z.uuid(),
+  sourceTargetName: z.string().trim().max(80).nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+  lastMessageAt: z.string().datetime({ offset: true }),
+  latestMessagePreview: z.string().trim().max(2000).nullable(),
+  latestMessageSenderId: z.uuid().nullable()
+});
+
+export const chatThreadsSchema = z.array(chatThreadSchema);
+
+export const chatMessageSchema = z.object({
+  id: z.uuid(),
+  threadId: z.uuid(),
+  senderUserId: z.uuid(),
+  body: z.string().trim().min(1).max(2000),
+  createdAt: z.string().datetime({ offset: true })
+});
+
+export const chatMessagesResponseSchema = z.object({
+  thread: chatThreadSchema,
+  messages: z.array(chatMessageSchema)
+});
+
+export const sendChatMessageInputSchema = z.object({
+  body: z
+    .string()
+    .trim()
+    .min(1, 'Message is required.')
+    .max(2000, 'Messages must be 2000 characters or fewer.')
+});
+
+export const startChatResponseSchema = chatThreadSchema;
+export const sendChatMessageResponseSchema = chatMessageSchema;
+
 export const profileSchema = z.object({
   id: z.uuid(),
   fullName: z.string().trim().max(80),

@@ -4,8 +4,19 @@ import { vi } from 'vitest';
 import NotificationsPage from './NotificationsPage.jsx';
 
 const notificationMocks = vi.hoisted(() => ({
-  markAsRead: vi.fn()
+  markAsRead: vi.fn(),
+  startChatFromMatch: vi.fn(),
+  navigate: vi.fn()
 }));
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+
+  return {
+    ...actual,
+    useNavigate: () => notificationMocks.navigate
+  };
+});
 
 vi.mock('../context/useNotifications.js', () => ({
   useNotifications: () => ({
@@ -48,6 +59,12 @@ vi.mock('../context/useNotifications.js', () => ({
   })
 }));
 
+vi.mock('../context/useChats.js', () => ({
+  useChats: () => ({
+    startChatFromMatch: notificationMocks.startChatFromMatch
+  })
+}));
+
 vi.mock('../components/layout/AppShell.jsx', () => ({
   default: ({ children }) => children
 }));
@@ -55,6 +72,8 @@ vi.mock('../components/layout/AppShell.jsx', () => ({
 describe('NotificationsPage', () => {
   beforeEach(() => {
     notificationMocks.markAsRead.mockReset();
+    notificationMocks.startChatFromMatch.mockReset();
+    notificationMocks.navigate.mockReset();
     notificationMocks.markAsRead.mockResolvedValue({
       id: '4ea60354-358e-4f13-8b5e-faf6d6b32d25',
       decision: 'like',
@@ -86,9 +105,12 @@ describe('NotificationsPage', () => {
         name: 'Pulse'
       }
     });
+    notificationMocks.startChatFromMatch.mockResolvedValue({
+      id: 'thread-123'
+    });
   });
 
-  it('opens a notification detail view and marks it as read', async () => {
+  it('opens a notification detail view and can start a chat from a like match', async () => {
     const user = userEvent.setup();
 
     render(<NotificationsPage />);
@@ -105,5 +127,17 @@ describe('NotificationsPage', () => {
     expect(within(dialog).getByText('Frontend builder looking for climate-tech teams.')).toBeInTheDocument();
     expect(within(dialog).getByText('https://github.com/mayachen')).toBeInTheDocument();
     expect(within(dialog).getByText('maya@example.com')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: /start chat/i }));
+
+    await waitFor(() => {
+      expect(notificationMocks.startChatFromMatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: '4ea60354-358e-4f13-8b5e-faf6d6b32d25'
+        })
+      );
+    });
+
+    expect(notificationMocks.navigate).toHaveBeenCalledWith('/chat?thread=thread-123');
   });
 });
