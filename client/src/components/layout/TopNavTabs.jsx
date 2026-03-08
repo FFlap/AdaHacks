@@ -87,7 +87,7 @@ export default function TopNavTabs() {
         border: "1px solid #e5e7eb",
         backgroundColor: "#fff",
         maxWidth: 700,
-        mx: "auto",
+        flex: 1,
       }}
     >
       <Tabs
