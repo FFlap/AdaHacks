@@ -2,7 +2,6 @@ import { useEffect, useEffectEvent, useState } from "react";
 import { Badge, Paper, Tabs, Tab, Box, Tooltip, IconButton, Menu, MenuItem, useMediaQuery } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getMe } from "../../lib/api.js";
 import { useAuth } from "../../context/useAuth.js";
 import { useNotifications } from "../../context/useNotifications.js";
 
@@ -31,11 +30,14 @@ function hasProfileAccessRequirements(profile) {
 export default function TopNavTabs() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { session, cachedMe, refreshCachedMe } = useAuth();
   const { unreadCount } = useNotifications();
-  const [hasUnlockedTabs, setHasUnlockedTabs] = useState(null);
+  const [fetchedHasUnlockedTabs, setFetchedHasUnlockedTabs] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const hasUnlockedTabs = cachedMe?.profile
+    ? hasProfileAccessRequirements(cachedMe.profile)
+    : fetchedHasUnlockedTabs;
 
   const currentTab =
     navItems.find((item) => location.pathname.startsWith(item.value))?.value ||
@@ -43,21 +45,25 @@ export default function TopNavTabs() {
 
   const loadProfileState = useEffectEvent(async () => {
     if (!session?.access_token) {
-      setHasUnlockedTabs(null);
+      setFetchedHasUnlockedTabs(null);
       return;
     }
 
     try {
-      const response = await getMe(session.access_token);
-      setHasUnlockedTabs(hasProfileAccessRequirements(response.profile));
+      const response = await refreshCachedMe();
+      setFetchedHasUnlockedTabs(hasProfileAccessRequirements(response.profile));
     } catch {
-      setHasUnlockedTabs(null);
+      setFetchedHasUnlockedTabs(null);
     }
   });
 
   useEffect(() => {
+    if (cachedMe?.profile || !session?.access_token) {
+      return;
+    }
+
     loadProfileState();
-  }, [session?.access_token]);
+  }, [cachedMe, session?.access_token]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -65,7 +71,7 @@ export default function TopNavTabs() {
     }
 
     const handleProfileUpdated = (event) => {
-      setHasUnlockedTabs(hasProfileAccessRequirements(event.detail));
+      setFetchedHasUnlockedTabs(hasProfileAccessRequirements(event.detail));
     };
 
     window.addEventListener("profile-updated", handleProfileUpdated);

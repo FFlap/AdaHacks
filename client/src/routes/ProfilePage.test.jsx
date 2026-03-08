@@ -9,11 +9,13 @@ const authMock = {
       email: 'ada@example.com'
     }
   },
-  signOut: vi.fn()
+  signOut: vi.fn(),
+  cachedMe: null,
+  setCachedMe: vi.fn(),
+  refreshCachedMe: vi.fn()
 };
 
 const apiMocks = vi.hoisted(() => ({
-  getMe: vi.fn(),
   updateProfile: vi.fn()
 }));
 
@@ -27,7 +29,6 @@ vi.mock('../context/useAuth.js', () => ({
 }));
 
 vi.mock('../lib/api.js', () => ({
-  getMe: apiMocks.getMe,
   updateProfile: apiMocks.updateProfile
 }));
 
@@ -42,73 +43,133 @@ vi.mock('../components/layout/AppShell.jsx', () => ({
 }));
 
 describe('ProfilePage', () => {
+  const initialResponse = {
+    user: {
+      id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      email: 'ada@example.com'
+    },
+    profile: {
+      id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      fullName: 'Ada Lovelace',
+      bio: 'Analytical engine enthusiast',
+      avatarUrl: null,
+      contactLinks: {},
+      skills: ['React', 'Supabase'],
+      projects: [
+        {
+          id: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
+          name: 'Orbit',
+          theme: 'Climate',
+          description: 'Maps urban heat islands.',
+          techStack: ['Vite', 'Supabase']
+        }
+      ],
+      createdAt: '2026-03-07T18:00:00.000Z',
+      updatedAt: '2026-03-07T18:00:00.000Z'
+    }
+  };
+
+  const updatedResponse = {
+    user: {
+      id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      email: 'ada@example.com'
+    },
+    profile: {
+      id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      fullName: 'Ada Byron',
+      bio: 'First programmer',
+      avatarUrl: 'https://example.supabase.co/storage/v1/object/public/profile-images/34cd/avatar',
+      contactLinks: {
+        github: 'https://github.com/adabyron',
+        email: 'ada@example.com'
+      },
+      skills: ['React', 'Supabase', 'Node.js'],
+      projects: [
+        {
+          id: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
+          name: 'Orbit',
+          theme: 'Climate',
+          description: 'Maps urban heat islands.',
+          techStack: ['Vite', 'Supabase']
+        },
+        {
+          id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
+          name: 'Pulse',
+          theme: 'Hackathon',
+          description: 'Live team coordination board.',
+          techStack: ['Node.js', 'Express']
+        }
+      ],
+      createdAt: '2026-03-07T18:00:00.000Z',
+      updatedAt: '2026-03-07T18:05:00.000Z'
+    }
+  };
+
   beforeEach(() => {
-    apiMocks.getMe.mockReset();
     apiMocks.updateProfile.mockReset();
     mediaMocks.uploadAvatar.mockReset();
     mediaMocks.validateAvatarFile.mockReset();
+    authMock.cachedMe = null;
+    authMock.setCachedMe.mockReset();
+    authMock.refreshCachedMe.mockReset();
+    authMock.signOut.mockReset();
     mediaMocks.validateAvatarFile.mockReturnValue('');
-    apiMocks.getMe.mockResolvedValue({
-      user: {
-        id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
-        email: 'ada@example.com'
-      },
-      profile: {
-        id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
-        fullName: 'Ada Lovelace',
-        bio: 'Analytical engine enthusiast',
-        avatarUrl: null,
-        contactLinks: {},
-        skills: ['React', 'Supabase'],
-        projects: [
-          {
-            id: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
-            name: 'Orbit',
-            theme: 'Climate',
-            description: 'Maps urban heat islands.',
-            techStack: ['Vite', 'Supabase']
-          }
-        ],
-        createdAt: '2026-03-07T18:00:00.000Z',
-        updatedAt: '2026-03-07T18:00:00.000Z'
-      }
-    });
-    apiMocks.updateProfile.mockResolvedValue({
-      user: {
-        id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
-        email: 'ada@example.com'
-      },
-      profile: {
-        id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
-        fullName: 'Ada Byron',
-        bio: 'First programmer',
-        avatarUrl: 'https://example.supabase.co/storage/v1/object/public/profile-images/34cd/avatar',
-        contactLinks: {
-          github: 'https://github.com/adabyron',
-          email: 'ada@example.com'
-        },
-        skills: ['React', 'Supabase', 'Node.js'],
-        projects: [
-          {
-            id: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
-            name: 'Orbit',
-            theme: 'Climate',
-            description: 'Maps urban heat islands.',
-            techStack: ['Vite', 'Supabase']
-          },
-          {
-            id: '9e6f7cb7-4800-4ef2-8e4f-15ad9e426812',
-            name: 'Pulse',
-            theme: 'Hackathon',
-            description: 'Live team coordination board.',
-            techStack: ['Node.js', 'Express']
-          }
-        ],
-        createdAt: '2026-03-07T18:00:00.000Z',
-        updatedAt: '2026-03-07T18:05:00.000Z'
-      }
-    });
+    authMock.refreshCachedMe.mockResolvedValue(initialResponse);
+    apiMocks.updateProfile.mockResolvedValue(updatedResponse);
     mediaMocks.uploadAvatar.mockResolvedValue('34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar');
+  });
+
+  it('shows skeletons on the first load instead of the blocking loading message', () => {
+    authMock.refreshCachedMe.mockImplementation(() => new Promise(() => {}));
+
+    render(<ProfilePage />);
+
+    expect(screen.getByTestId('profile-skeleton')).toBeInTheDocument();
+    expect(screen.getByTestId('profile-skeleton-editor')).toBeInTheDocument();
+    expect(screen.queryByText(/pulling profile data from the api/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/full name/i)).not.toBeInTheDocument();
+  });
+
+  it('renders cached profile data instantly while a background refresh runs', async () => {
+    authMock.cachedMe = initialResponse;
+    authMock.refreshCachedMe.mockImplementation(() => new Promise(() => {}));
+
+    render(<ProfilePage />);
+
+    expect(screen.getByDisplayValue('Ada Lovelace')).toBeInTheDocument();
+    expect(authMock.refreshCachedMe).toHaveBeenCalledWith({ force: true });
+    expect(screen.queryByTestId('profile-skeleton')).not.toBeInTheDocument();
+    expect(screen.queryByText(/refreshing profile/i)).not.toBeInTheDocument();
+  });
+
+  it('updates the page after a successful background refresh', async () => {
+    authMock.cachedMe = initialResponse;
+    authMock.refreshCachedMe.mockResolvedValue({
+      ...initialResponse,
+      profile: {
+        ...initialResponse.profile,
+        fullName: 'Ada Updated',
+        bio: 'New bio from the server',
+        updatedAt: '2026-03-07T18:10:00.000Z'
+      }
+    });
+
+    render(<ProfilePage />);
+
+    expect(screen.getByDisplayValue('Ada Lovelace')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('Ada Updated')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('New bio from the server')).toBeInTheDocument();
+  });
+
+  it('keeps cached content visible when the background refresh fails', async () => {
+    authMock.cachedMe = initialResponse;
+    authMock.refreshCachedMe.mockRejectedValue(new Error('Profile refresh failed.'));
+
+    render(<ProfilePage />);
+
+    expect(screen.getByDisplayValue('Ada Lovelace')).toBeInTheDocument();
+    expect(await screen.findByText('Profile refresh failed.')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Ada Lovelace')).toBeInTheDocument();
   });
 
   it('loads and updates the profile through the API layer, including projects', async () => {
@@ -188,6 +249,7 @@ describe('ProfilePage', () => {
         ]
       });
     });
+    expect(authMock.setCachedMe).toHaveBeenLastCalledWith(updatedResponse);
 
     expect(await screen.findByText(/profile saved/i)).toBeInTheDocument();
   });
