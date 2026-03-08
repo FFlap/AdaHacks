@@ -24,7 +24,7 @@ import {
 } from './profile.js';
 import { createAuthClient, createRequestClient } from './supabase.js';
 import hackathonRoutes from './routes/hackathons.js';
-app.use('/api/hackathons', hackathonRoutes);
+
 function isAllowedOrigin(origin, configuredOrigin) {
   if (!origin) {
     return true;
@@ -77,6 +77,9 @@ export function createApp({
     }
   }));
   app.use(express.json());
+
+  // ── Hackathons (public, no auth required) ──────────────────────────────────
+  app.use('/api/hackathons', hackathonRoutes);
 
   app.get('/api/v1/health', (_request, response) => {
     response.json({ status: 'ok' });

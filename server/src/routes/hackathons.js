@@ -98,7 +98,8 @@ router.get('/', async (req, res) => {
     res.json({ hackathons: filtered, count: filtered.length });
   } catch (err) {
     console.error('Devpost scrape error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch hackathons from Devpost.' });
+    console.error(err.stack);
+    res.status(500).json({ error: err.message });
   }
 });
 
