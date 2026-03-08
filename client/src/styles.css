@@ -11,13 +11,13 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --ink: #631D20;
-  --muted: #8C4148;
-  --paper: #fdf5f5;
+  --ink: #152028;
+  --muted: #1e313e;
+  --paper: #eff6fb;
   --paper-strong: #f9eded;
-  --line: #e8c5c7;
-  --line-strong: #631D20;
-  --accent: #8C4148;
+  --line: #d6e8f5;
+  --line-strong: #1e313e;
+  --accent: #254156;
   --shadow: none;
 }
 
