@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
+    "seed:demo": "node scripts/seedDemoProfiles.mjs",
     "build": "node -e \"process.stdout.write('server: no build step\\n')\"",
     "test": "vitest run"
   },

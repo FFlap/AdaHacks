@@ -18,3 +18,10 @@ export function getEnv(source = process.env) {
     openRouterModel: required(source, 'OPENROUTER_MODEL')
   };
 }
+
+export function getSeedEnv(source = process.env) {
+  return {
+    supabaseUrl: required(source, 'SUPABASE_URL'),
+    supabaseServiceRoleKey: required(source, 'SUPABASE_SERVICE_ROLE_KEY')
+  };
+}

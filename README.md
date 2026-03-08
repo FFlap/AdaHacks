@@ -23,6 +23,7 @@
 
    SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
+   SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
    CLIENT_ORIGIN=http://localhost:5173
    PORT=4010
    OPENROUTER_API_KEY=your-openrouter-api-key
@@ -39,20 +40,15 @@
    npx supabase db push
    ```
 
-   That push now creates:
-   - the `profiles` columns for `avatar_path` and `skills`
-   - the `profiles.contact_links` field for notification-only contact and social links
-   - the `projects` table used by the profile page project cards
-   - the `swipes` table used to persist pass/like decisions and hide seen cards
-   - the authenticated project-discovery feed function used by `/projects`
-   - the authenticated people-discovery feed function used by `/people`
-   - the authenticated notifications feed function used by `/notifications`
-   - the public `profile-images` storage bucket
-   - storage policies so each user can upload only their own avatar file
+5. Optionally seed 20 demo builders plus projects into your hosted Supabase project:
 
-5. In the Supabase dashboard, enable Email auth under Authentication if it is not already enabled.
+   ```bash
+   npm run seed:demo -w server
+   ```
 
-6. Start the app:
+6. In the Supabase dashboard, enable Email auth under Authentication if it is not already enabled.
+
+7. Start the app:
 
    ```bash
    npm run dev
@@ -70,22 +66,6 @@ npm run dev
 - API: `http://localhost:4010`
 
 If Vite starts on a different port such as `5174`, update `CLIENT_ORIGIN` in the root `.env` to match it before testing profile saves.
-
-## AI Project Match
-
-- The project card info button on `/projects` calls `POST /api/v1/projects/:projectId/analysis`.
-- The server sends the signed-in user’s skills plus their own saved projects to OpenRouter and returns:
-  - matching skills
-  - missing skills
-  - a contribution summary
-- If you rotate the OpenRouter key, update the root `.env` and restart `npm run dev`.
-
-## Swipes and Notifications
-
-- Swiping left or pressing the heart now writes a persisted swipe record through `POST /api/v1/swipes`.
-- Once a user swipes on a project or person, that same card is filtered out of future feed loads for that user.
-- The owner of the affected profile or project sees the event in `/notifications`.
-- Contact and social links saved in the profile editor are only exposed inside notification detail views.
 
 ## Commands
 

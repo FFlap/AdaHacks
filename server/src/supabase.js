@@ -20,3 +20,13 @@ export function createRequestClient(env, token) {
     }
   });
 }
+
+export function createAdminClient({ supabaseUrl, supabaseServiceRoleKey }) {
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false
+    }
+  });
+}
