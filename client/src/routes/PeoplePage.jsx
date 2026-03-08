@@ -89,8 +89,8 @@ export default function PeoplePage() {
 
         {status === 'loading' ? (
           <Box sx={{ mt: 8, display: 'grid', placeItems: 'center', gap: 2 }}>
-            <CircularProgress color="inherit" size={28} />
-            <Typography color="#e5e7eb">Loading people...</Typography>
+            <CircularProgress size={28} sx={{'@media (prefers-color-scheme: dark)': { color: '#fff' } }} />
+            <Typography sx={{ '@media (prefers-color-scheme: dark)': { color: '#fff' } }}>Loading people...</Typography>
           </Box>
         ) : null}
 
@@ -101,19 +101,17 @@ export default function PeoplePage() {
         ) : null}
 
         {status === 'ready' ? (
-          <>
-            <SwipeDeck
-              items={people}
-              currentIndex={currentIndex}
-              setCurrentIndex={setCurrentIndex}
-              onSwipe={handleSwipe}
-              renderCard={(person) => (
-                <PersonSwipeCard person={person} />
-              )}
-            />
-
-            <SwipeActionButtons onPass={handlePass} onLike={handleLike} />
-          </>
+          <SwipeDeck
+            items={people}
+            currentIndex={currentIndex}
+            setCurrentIndex={setCurrentIndex}
+            onSwipe={handleSwipe}
+            onPass={handlePass}
+            onLike={handleLike}
+            renderCard={(person) => (
+              <PersonSwipeCard person={person} />
+            )}
+          />
         ) : null}
       </Box>
     </AppShell>
