@@ -83,7 +83,7 @@ export default function PeoplePage() {
   return (
     <AppShell>
       <Box sx={{ p: 4 }}>
-        <Typography align="center" color="text.secondary" sx={{ mb: 5 }}>
+        <Typography align="center" color="text.secondary" sx={{ mb: 5, '@media (prefers-color-scheme: dark)': { color: '#fff' } }}>
           Swipe through builder profiles to find collaborators with the right stack and projects.
         </Typography>
 
