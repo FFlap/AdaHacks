@@ -9,6 +9,7 @@ const navItems = [
   { label: "Projects", value: "/projects" },
   { label: "People", value: "/people" },
   { label: "Matches", value: "/notifications" },
+  {label: "Hacks", value: "/hacks" },
   { label: "Profile", value: "/profile" },
 ];
 
