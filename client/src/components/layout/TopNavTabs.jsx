@@ -13,7 +13,7 @@ const navItems = [
   { label: "Profile", value: "/profile" },
 ];
 
-const profileLockedTabs = new Set(["/projects", "/people"]);
+const profileLockedTabs = new Set(["/projects", "/people", "/notifications", "/hacks"]);
 const lockedTabMessage = "Add your name, at least one Tech stack & frameworks entry, and at least one contact method in Profile to unlock this tab.";
 
 function hasProfileAccessRequirements(profile) {
