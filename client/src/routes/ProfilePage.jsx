@@ -527,9 +527,6 @@ export function ProfilePage() {
                       <div className="section-heading">
                         <div>
                           <p className="eyebrow">Contact info</p>
-                          <p className="section-copy">
-                            Add the links and contact details used in notifications when someone swipes on your profile or projects.
-                          </p>
                         </div>
                       </div>
                       <div className="field-grid">

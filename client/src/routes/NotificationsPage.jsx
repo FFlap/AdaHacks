@@ -77,7 +77,16 @@ export default function NotificationsPage() {
 
   return (
     <AppShell>
-      <Container maxWidth="md">
+      <Container
+        maxWidth="xl"
+        sx={{
+          px: {
+            xs: 2,
+            sm: 3,
+            md: 4
+          }
+        }}
+      >
         <Box sx={{ mb: 4, textAlign: 'center' }}>
           <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.03em' }}>
             Notifications
@@ -118,7 +127,18 @@ export default function NotificationsPage() {
           </Card>
         ) : null}
 
-        <Stack spacing={2}>
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, minmax(0, 1fr))',
+              md: 'repeat(3, minmax(0, 1fr))'
+            },
+            alignItems: 'start'
+          }}
+        >
           {notifications.map((notification) => (
             <Card
               component="button"
@@ -127,6 +147,7 @@ export default function NotificationsPage() {
               onClick={() => handleOpenNotification(notification)}
               sx={{
                 width: '100%',
+                height: '100%',
                 textAlign: 'left',
                 cursor: 'pointer',
                 borderRadius: 4,
@@ -167,7 +188,7 @@ export default function NotificationsPage() {
               </CardContent>
             </Card>
           ))}
-        </Stack>
+        </Box>
 
         <Dialog
           open={!!expandedNotification}
