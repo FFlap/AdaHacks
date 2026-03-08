@@ -47,7 +47,7 @@ export default function TopNavTabs() {
               value={item.value}
               label={
                 isNotificationTab && unreadCount > 0 ? (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2.25, pr: 1 }}>
                     <span>{item.label}</span>
                     <Badge
                       badgeContent={unreadCount}
