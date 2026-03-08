@@ -158,7 +158,7 @@ export default function ProjectsPage() {
   return (
     <AppShell>
       <Box sx={{ p: 4 }}>
-        <Typography align="center" color="text.secondary" sx={{ mb: 4 }}>
+        <Typography align="center" color="text.secondary" sx={{ mb: 4, '@media (prefers-color-scheme: dark)': { color: '#fff' } }}>
           Swipe through projects from other builders to find something to join.
         </Typography>
 

@@ -89,7 +89,7 @@ export default function NotificationsPage() {
         }}
       >
         <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" sx={{ '@media (prefers-color-scheme: dark)': { color: '#fff' } }}>
             Every pass or like on your profile and projects shows up here.
           </Typography>
         </Box>
@@ -115,11 +115,15 @@ export default function NotificationsPage() {
               border: '1px solid #e5e7eb',
               backgroundColor: '#fff',
               textAlign: 'center',
-              py: 7
+              py: 7,
+              '@media (prefers-color-scheme: dark)': {
+                backgroundColor: '#2a2828',
+                border: '1px solid #3d3a3a'
+              }
             }}
           >
-            <Typography variant="h6">No matches yet</Typography>
-            <Typography color="text.secondary" sx={{ mt: 1 }}>
+            <Typography variant="h6" sx={{ '@media (prefers-color-scheme: dark)': { color: '#f5f0f0' } }}>No matches yet</Typography>
+            <Typography color="text.secondary" sx={{ mt: 1, '@media (prefers-color-scheme: dark)': { color: '#fff' } }}>
               When someone swipes on your profile or one of your projects, it will show up here.
             </Typography>
           </Card>
