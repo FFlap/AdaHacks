@@ -131,7 +131,7 @@ export default function ChatPage() {
         }}
       >
         <Box sx={{ mb: 3, textAlign: 'center' }}>
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" sx={{ '@media (prefers-color-scheme: dark)': { color: '#fff' } }}>
             Start from a match, then keep the conversation going here in real time.
           </Typography>
         </Box>
