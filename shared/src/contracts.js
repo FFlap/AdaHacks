@@ -6,6 +6,22 @@ export const skillSchema = z
   .min(1, 'Skills cannot be empty.')
   .max(32, 'Each skill must be 32 characters or fewer.');
 
+const optionalUrlSchema = z
+  .url()
+  .max(280, 'Links must be 280 characters or fewer.');
+
+export const contactLinksSchema = z.object({
+  linkedin: optionalUrlSchema.optional(),
+  instagram: optionalUrlSchema.optional(),
+  twitter: optionalUrlSchema.optional(),
+  github: optionalUrlSchema.optional(),
+  email: z.email().max(120, 'Email must be 120 characters or fewer.').optional(),
+  phone: z.string().trim().min(1).max(32, 'Phone number must be 32 characters or fewer.').optional()
+});
+
+export const swipeDecisionSchema = z.enum(['pass', 'like']);
+export const swipeTargetTypeSchema = z.enum(['profile', 'project']);
+
 export const projectSchema = z.object({
   id: z.uuid(),
   name: z.string().trim().min(1, 'Project name is required.').max(80),
@@ -62,11 +78,55 @@ export const personFeedItemSchema = z.object({
 
 export const peopleFeedSchema = z.array(personFeedItemSchema);
 
+export const notificationActorSchema = z.object({
+  id: z.uuid(),
+  fullName: z.string().trim().min(1).max(80),
+  avatarUrl: z.url().nullable(),
+  bio: z.string().trim().max(280),
+  skills: z.array(skillSchema).max(16),
+  projects: z.array(projectSchema),
+  contactLinks: contactLinksSchema.default({})
+});
+
+export const notificationSchema = z.object({
+  id: z.uuid(),
+  decision: swipeDecisionSchema,
+  targetType: swipeTargetTypeSchema,
+  createdAt: z.string().datetime({ offset: true }),
+  readAt: z.string().datetime({ offset: true }).nullable(),
+  actor: notificationActorSchema,
+  target: z.object({
+    id: z.uuid(),
+    name: z.string().trim().max(80).nullable()
+  })
+});
+
+export const notificationsSchema = z.array(notificationSchema);
+
+export const swipeInputSchema = z.object({
+  targetType: swipeTargetTypeSchema,
+  targetId: z.uuid(),
+  decision: swipeDecisionSchema
+});
+
+export const swipeResponseSchema = z.object({
+  id: z.uuid(),
+  targetType: swipeTargetTypeSchema,
+  targetId: z.uuid(),
+  decision: swipeDecisionSchema
+});
+
+export const notificationReadResponseSchema = z.object({
+  id: z.uuid(),
+  readAt: z.string().datetime({ offset: true })
+});
+
 export const profileSchema = z.object({
   id: z.uuid(),
   fullName: z.string().trim().max(80),
   bio: z.string().trim().max(280),
   avatarUrl: z.url().nullable(),
+  contactLinks: contactLinksSchema.default({}),
   skills: z.array(skillSchema).max(16),
   projects: z.array(projectSchema),
   createdAt: z.string().datetime({ offset: true }),
@@ -89,6 +149,7 @@ export const updateProfileInputSchema = z.object({
     .min(1, 'Avatar path is required when provided.')
     .max(256, 'Avatar path must be 256 characters or fewer.')
     .optional(),
+  contactLinks: contactLinksSchema.default({}),
   skills: z.array(skillSchema).max(16, 'Add 16 skills or fewer.'),
   projects: z.array(projectInputSchema)
 });

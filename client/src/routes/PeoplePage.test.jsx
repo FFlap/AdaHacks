@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import PeoplePage from './PeoplePage.jsx';
 
@@ -9,6 +10,7 @@ const authMock = {
 };
 
 const apiMocks = vi.hoisted(() => ({
+  createSwipe: vi.fn(),
   getPeopleFeed: vi.fn()
 }));
 
@@ -17,6 +19,7 @@ vi.mock('../context/useAuth.js', () => ({
 }));
 
 vi.mock('../lib/api.js', () => ({
+  createSwipe: apiMocks.createSwipe,
   getPeopleFeed: apiMocks.getPeopleFeed
 }));
 
@@ -26,6 +29,7 @@ vi.mock('../components/layout/AppShell.jsx', () => ({
 
 describe('PeoplePage', () => {
   beforeEach(() => {
+    apiMocks.createSwipe.mockReset();
     apiMocks.getPeopleFeed.mockReset();
     apiMocks.getPeopleFeed.mockResolvedValue([
       {
@@ -44,6 +48,12 @@ describe('PeoplePage', () => {
         ]
       }
     ]);
+    apiMocks.createSwipe.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440007',
+      targetType: 'profile',
+      targetId: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+      decision: 'pass'
+    });
   });
 
   it('loads discoverable people from the API', async () => {
@@ -56,5 +66,23 @@ describe('PeoplePage', () => {
     expect(await screen.findByText('Maya Chen')).toBeInTheDocument();
     expect(screen.getByText('Frontend builder looking for climate-tech teams.')).toBeInTheDocument();
     expect(screen.getByText('Pulse')).toBeInTheDocument();
+  });
+
+  it('persists a profile swipe when the user taps pass', async () => {
+    const user = userEvent.setup();
+
+    render(<PeoplePage />);
+
+    expect(await screen.findByText('Maya Chen')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /pass/i }));
+
+    await waitFor(() => {
+      expect(apiMocks.createSwipe).toHaveBeenCalledWith('token-123', {
+        targetType: 'profile',
+        targetId: '5ba6c5b5-5341-4638-a164-a3b0f9b88447',
+        decision: 'pass'
+      });
+    });
   });
 });

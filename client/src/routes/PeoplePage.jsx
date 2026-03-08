@@ -5,7 +5,7 @@ import SwipeActionButtons from '../components/swipe/SwipeActionButtons';
 import SwipeDeck from '../components/swipe/SwipeDeck';
 import PersonSwipeCard from '../components/swipe/PersonSwipeCard.jsx';
 import { useAuth } from '../context/useAuth.js';
-import { getPeopleFeed } from '../lib/api.js';
+import { createSwipe, getPeopleFeed } from '../lib/api.js';
 
 export default function PeoplePage() {
   const { session } = useAuth();
@@ -37,8 +37,33 @@ export default function PeoplePage() {
     loadPeople();
   }, [session?.access_token]);
 
+  async function persistSwipe(direction, person) {
+    if (!session?.access_token || !person) {
+      return;
+    }
+
+    try {
+      await createSwipe(session.access_token, {
+        targetType: 'profile',
+        targetId: person.id,
+        decision: direction === 'left' ? 'pass' : 'like'
+      });
+    } catch (swipeError) {
+      setError(swipeError.message);
+      try {
+        const response = await getPeopleFeed(session.access_token);
+        setPeople(response);
+        setCurrentIndex(0);
+        setStatus('ready');
+      } catch (reloadError) {
+        setError(reloadError.message);
+        setStatus('error');
+      }
+    }
+  }
+
   const handleSwipe = (direction, person) => {
-    console.log('Swiped:', direction, person);
+    void persistSwipe(direction, person);
   };
 
   const handlePass = () => {

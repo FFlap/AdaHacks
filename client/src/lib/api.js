@@ -1,9 +1,13 @@
 import {
   errorResponseSchema,
   meResponseSchema,
+  notificationReadResponseSchema,
+  notificationsSchema,
   peopleFeedSchema,
   projectAnalysisSchema,
   projectFeedSchema,
+  swipeInputSchema,
+  swipeResponseSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
 import { env } from './env.js';
@@ -65,4 +69,28 @@ export async function analyzeProject(token, projectId) {
 export async function getPeopleFeed(token) {
   const payload = await request('/api/v1/people', { token });
   return peopleFeedSchema.parse(payload);
+}
+
+export async function createSwipe(token, input) {
+  const payload = swipeInputSchema.parse(input);
+  const response = await request('/api/v1/swipes', {
+    method: 'POST',
+    token,
+    body: payload
+  });
+
+  return swipeResponseSchema.parse(response);
+}
+
+export async function getNotifications(token) {
+  const payload = await request('/api/v1/notifications', { token });
+  return notificationsSchema.parse(payload);
+}
+
+export async function markNotificationRead(token, notificationId) {
+  const payload = await request(`/api/v1/notifications/${notificationId}/read`, {
+    method: 'POST',
+    token
+  });
+  return notificationReadResponseSchema.parse(payload);
 }

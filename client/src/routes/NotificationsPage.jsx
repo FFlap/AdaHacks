@@ -1,363 +1,331 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import CloseIcon from '@mui/icons-material/Close';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import LocalPhoneOutlinedIcon from '@mui/icons-material/LocalPhoneOutlined';
+import TwitterIcon from '@mui/icons-material/Twitter';
 import {
+  Alert,
+  Avatar,
   Box,
-  Button,
   Card,
   CardContent,
+  Chip,
+  CircularProgress,
   Container,
   Dialog,
-  DialogActions,
   DialogContent,
-  DialogTitle,
-  Grid,
-  Typography,
-  Avatar,
-  Chip,
-  Alert,
   IconButton,
-  Tooltip
+  Link,
+  Stack,
+  Typography
 } from '@mui/material';
-import LinkedInIcon from '@mui/icons-material/LinkedIn';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import AppShell from '../components/layout/AppShell.jsx';
 import { useNotifications } from '../context/useNotifications.js';
 
-const NotificationsPage = () => {
-  const { notifications, handleNotificationResponse, notificationProfiles } = useNotifications();
+const contactRenderers = [
+  { key: 'linkedin', label: 'LinkedIn', icon: LinkedInIcon },
+  { key: 'instagram', label: 'Instagram', icon: InstagramIcon },
+  { key: 'twitter', label: 'Twitter / X', icon: TwitterIcon },
+  { key: 'github', label: 'GitHub', icon: GitHubIcon },
+  { key: 'email', label: 'Email', icon: EmailOutlinedIcon, href: (value) => `mailto:${value}` },
+  { key: 'phone', label: 'Phone', icon: LocalPhoneOutlinedIcon, href: (value) => `tel:${value}` }
+];
+
+function getInitials(name = '') {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+
+  if (words.length >= 2) {
+    return `${words[0][0]}${words[1][0]}`.toUpperCase();
+  }
+
+  return name.slice(0, 2).toUpperCase() || 'N';
+}
+
+function formatNotificationMessage(notification) {
+  const subject = notification.targetType === 'project'
+    ? `your project${notification.target.name ? ` ${notification.target.name}` : ''}`
+    : 'your profile';
+
+  return notification.decision === 'like'
+    ? `liked ${subject}`
+    : `passed on ${subject}`;
+}
+
+function formatTimestamp(value) {
+  return new Date(value).toLocaleString();
+}
+
+export default function NotificationsPage() {
+  const {
+    notifications,
+    loading,
+    error,
+    markAsRead
+  } = useNotifications();
   const [expandedNotification, setExpandedNotification] = useState(null);
 
-  const handleConnect = (notification) => {
-    handleNotificationResponse(notification.id, true);
-    setExpandedNotification(null);
-    // In real app: navigate(`/profile/${notification.triggeredByUserId}`)
-  };
+  async function handleOpenNotification(notification) {
+    const nextNotification = notification.readAt
+      ? notification
+      : await markAsRead(notification.id);
 
-  const handleNoThanks = (notification) => {
-    handleNotificationResponse(notification.id, false);
-    setExpandedNotification(null);
-  };
-
-  const getNotificationMessage = (notification) => {
-    if (notification.notificationType === 'profile_liked') {
-      return 'swiped right on your profile';
-    } else {
-      return 'swiped right on your project';
-    }
-  };
-
-  const groupedByUser = notifications.reduce((acc, notification) => {
-    const userId = notification.triggeredByUserId;
-    if (!acc[userId]) {
-      acc[userId] = [];
-    }
-    acc[userId].push(notification);
-    return acc;
-  }, {});
+    setExpandedNotification(nextNotification ?? notification);
+  }
 
   return (
     <AppShell>
-      <Container maxWidth="md">
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ mb: 1, fontWeight: 'bold' }}>
-            Notifications
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {notifications.length === 0
-              ? 'No notifications yet'
-              : `You have ${notifications.length} notification${notifications.length !== 1 ? 's' : ''}`}
+      <Container
+        maxWidth="xl"
+        sx={{
+          py: 4,
+          px: {
+            xs: 2,
+            sm: 3,
+            md: 4
+          }
+        }}
+      >
+        <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Typography color="text.secondary">
+            Every pass or like on your profile and projects shows up here.
           </Typography>
         </Box>
 
-        {notifications.length === 0 ? (
-          <Card sx={{ textAlign: 'center', py: 6 }}>
-            <Typography variant="h6" color="text.secondary">
-              No notifications yet
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              When someone swipes right on your profile or projects, you'll see it here.
+        {loading ? (
+          <Box sx={{ mt: 8, display: 'grid', placeItems: 'center', gap: 2 }}>
+            <CircularProgress color="inherit" size={28} />
+            <Typography color="text.secondary">Loading matches...</Typography>
+          </Box>
+        ) : null}
+
+        {error ? (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        ) : null}
+
+        {!loading && !notifications.length ? (
+          <Card
+            elevation={0}
+            sx={{
+              borderRadius: 4,
+              border: '1px solid #e5e7eb',
+              backgroundColor: '#fff',
+              textAlign: 'center',
+              py: 7
+            }}
+          >
+            <Typography variant="h6">No matches yet</Typography>
+            <Typography color="text.secondary" sx={{ mt: 1 }}>
+              When someone swipes on your profile or one of your projects, it will show up here.
             </Typography>
           </Card>
-        ) : (
-          <Grid container spacing={2}>
-            {Object.entries(groupedByUser).map(([userId, userNotifications]) => {
-              const profile = notificationProfiles[userId];
-              const latestNotification = userNotifications[0];
+        ) : null}
 
-              return (
-                <Grid item xs={12} sm={6} md={6} key={userId}>
-                  <Card
-                    sx={{
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        boxShadow: 4,
-                        transform: 'translateY(-2px)'
-                      },
-                      backgroundColor: latestNotification.isRead ? '#f9fafb' : '#eef2ff',
-                      borderLeft: !latestNotification.isRead ? '4px solid #4338ca' : 'none'
-                    }}
-                    onClick={() => setExpandedNotification(latestNotification)}
-                  >
-                    <CardContent>
-                      {profile ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                          <Avatar
-                            src={profile.avatarUrl || undefined}
-                            sx={{
-                              width: 48,
-                              height: 48,
-                              bgcolor: '#4338ca'
-                            }}
-                          >
-                            {profile.fullName
-                              .split(' ')
-                              .map((n) => n[0])
-                              .join('')
-                              .toUpperCase()}
-                          </Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                              {profile.fullName}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {getNotificationMessage(latestNotification)}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      ) : null}
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, minmax(0, 1fr))',
+              md: 'repeat(3, minmax(0, 1fr))'
+            },
+            alignItems: 'start'
+          }}
+        >
+          {notifications.map((notification) => (
+            <Card
+              component="button"
+              elevation={0}
+              key={notification.id}
+              onClick={() => handleOpenNotification(notification)}
+              sx={{
+                width: '100%',
+                height: '100%',
+                textAlign: 'left',
+                cursor: 'pointer',
+                borderRadius: 4,
+                border: notification.readAt ? '1px solid #e5e7eb' : '1px solid #111111',
+                backgroundColor: notification.readAt ? '#ffffff' : '#f8fafc',
+                p: 0
+              }}
+            >
+              <CardContent sx={{ p: 2.5 }}>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Avatar src={notification.actor.avatarUrl ?? undefined} sx={{ width: 52, height: 52 }}>
+                    {getInitials(notification.actor.fullName)}
+                  </Avatar>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontWeight: 700 }}>
+                      {notification.actor.fullName}
+                    </Typography>
+                    <Typography color="text.secondary" sx={{ mt: 0.25 }}>
+                      {formatNotificationMessage(notification)}
+                    </Typography>
+                  </Box>
+                  {!notification.readAt ? (
+                    <Box
+                      aria-label="Unread match"
+                      sx={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        backgroundColor: '#111111'
+                      }}
+                    />
+                  ) : null}
+                </Stack>
 
-                      {userNotifications.length > 1 && (
-                        <Chip
-                          label={`+${userNotifications.length - 1} more interaction${userNotifications.length - 1 !== 1 ? 's' : ''}`}
-                          size="small"
-                          sx={{ mt: 1 }}
-                        />
-                      )}
+                <Typography color="text.secondary" sx={{ mt: 1.5, fontSize: 13 }}>
+                  {formatTimestamp(notification.createdAt)}
+                </Typography>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
 
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                        {new Date(latestNotification.createdAt).toLocaleString()}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              );
-            })}
-          </Grid>
-        )}
-
-        {/* Notification Detail Dialog */}
         <Dialog
           open={!!expandedNotification}
           onClose={() => setExpandedNotification(null)}
-          maxWidth="sm"
           fullWidth
+          maxWidth="sm"
+          PaperProps={{
+            sx: {
+              borderRadius: 5,
+              border: '1px solid #d4d4d4',
+              backgroundColor: '#fbfbf9'
+            }
+          }}
         >
-          {expandedNotification && notificationProfiles[expandedNotification.triggeredByUserId] && (
-            <>
-              <DialogTitle>
-                {notificationProfiles[expandedNotification.triggeredByUserId]?.fullName}
-              </DialogTitle>
-              <DialogContent sx={{ pt: 2 }}>
-                <Box sx={{ textAlign: 'center', mb: 3 }}>
-                  <Avatar
-                    src={notificationProfiles[expandedNotification.triggeredByUserId]?.avatarUrl || undefined}
-                    sx={{
-                      width: 100,
-                      height: 100,
-                      bgcolor: '#4338ca',
-                      mx: 'auto',
-                      mb: 2,
-                      fontSize: '2rem'
-                    }}
-                  >
-                    {notificationProfiles[expandedNotification.triggeredByUserId]?.fullName
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .toUpperCase()}
-                  </Avatar>
+          {expandedNotification ? (
+            <DialogContent sx={{ p: 0 }}>
+              <Box sx={{ px: 3, pt: 3, pb: 2 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        letterSpacing: '0.18em',
+                        textTransform: 'uppercase',
+                        color: '#6b6b6b'
+                      }}
+                    >
+                      Match
+                    </Typography>
+                    <Typography variant="h4" sx={{ mt: 1, fontWeight: 700, letterSpacing: '-0.03em' }}>
+                      {expandedNotification.actor.fullName}
+                    </Typography>
+                    <Typography color="text.secondary" sx={{ mt: 0.75 }}>
+                      {formatNotificationMessage(expandedNotification)}
+                    </Typography>
+                  </Box>
+                  <IconButton aria-label="Close match" onClick={() => setExpandedNotification(null)}>
+                    <CloseIcon />
+                  </IconButton>
+                </Stack>
+              </Box>
 
-                  <Typography variant="body1" sx={{ mb: 2, fontWeight: 500 }}>
-                    {notificationProfiles[expandedNotification.triggeredByUserId]?.fullName}{' '}
-                    {getNotificationMessage(expandedNotification)}
+              <Box sx={{ px: 3, pb: 3, display: 'grid', gap: 3 }}>
+                <Box sx={{ display: 'grid', gap: 1 }}>
+                  <Typography sx={{ fontWeight: 600 }}>About them</Typography>
+                  <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                    {expandedNotification.actor.bio || 'No bio added yet.'}
                   </Typography>
+                </Box>
 
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {notificationProfiles[expandedNotification.triggeredByUserId]?.bio}
-                  </Typography>
+                <Box sx={{ display: 'grid', gap: 1 }}>
+                  <Typography sx={{ fontWeight: 600 }}>Skills</Typography>
+                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    {expandedNotification.actor.skills.length ? (
+                      expandedNotification.actor.skills.map((skill) => (
+                        <Chip key={skill} label={skill} variant="outlined" />
+                      ))
+                    ) : (
+                      <Typography color="text.secondary">No skills listed yet.</Typography>
+                    )}
+                  </Stack>
+                </Box>
 
-                  {notificationProfiles[expandedNotification.triggeredByUserId]?.skills?.length > 0 && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                        Skills
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-                        {notificationProfiles[expandedNotification.triggeredByUserId].skills.map(
-                          (skill) => (
-                            <Chip key={skill} label={skill} size="small" variant="outlined" />
-                          )
-                        )}
-                      </Box>
-                    </Box>
+                <Box sx={{ display: 'grid', gap: 1 }}>
+                  <Typography sx={{ fontWeight: 600 }}>Projects</Typography>
+                  {expandedNotification.actor.projects.length ? (
+                    <Stack spacing={1.25}>
+                      {expandedNotification.actor.projects.slice(0, 3).map((project) => (
+                        <Box
+                          key={project.id}
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 3,
+                            border: '1px solid #e5e7eb',
+                            backgroundColor: '#ffffff'
+                          }}
+                        >
+                          <Typography sx={{ fontWeight: 700 }}>{project.name}</Typography>
+                          <Typography color="text.secondary" sx={{ mt: 0.5, fontSize: 14 }}>
+                            {project.description || project.theme || 'No project summary added yet.'}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Typography color="text.secondary">No projects listed yet.</Typography>
                   )}
+                </Box>
 
-                  {notificationProfiles[expandedNotification.triggeredByUserId]?.projects?.length > 0 && (
-                    <Box sx={{ mb: 2, textAlign: 'left' }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                        Projects ({notificationProfiles[expandedNotification.triggeredByUserId].projects.length})
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {notificationProfiles[expandedNotification.triggeredByUserId].projects.slice(0, 2).map((project) => (
-                          <Box
-                            key={project.id}
+                <Box sx={{ display: 'grid', gap: 1 }}>
+                  <Typography sx={{ fontWeight: 600 }}>Contact & socials</Typography>
+                  {contactRenderers.some((entry) => expandedNotification.actor.contactLinks[entry.key]) ? (
+                    <Stack spacing={1}>
+                      {contactRenderers.map((entry) => {
+                        const value = expandedNotification.actor.contactLinks[entry.key];
+
+                        if (!value) {
+                          return null;
+                        }
+
+                        const Icon = entry.icon;
+                        const href = entry.href ? entry.href(value) : value;
+
+                        return (
+                          <Link
+                            color="inherit"
+                            href={href}
+                            key={entry.key}
+                            rel="noopener noreferrer"
+                            target={entry.key === 'email' || entry.key === 'phone' ? undefined : '_blank'}
+                            underline="none"
                             sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
                               p: 1.5,
-                              borderRadius: 2,
+                              borderRadius: 3,
                               border: '1px solid #e5e7eb',
-                              backgroundColor: '#f9fafb'
+                              backgroundColor: '#ffffff'
                             }}
                           >
-                            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                              {project.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {project.description}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
-
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(expandedNotification.createdAt).toLocaleString()}
-                  </Typography>
-                </Box>
-
-                <Typography variant="body2" sx={{ textAlign: 'center', mb: 3, fontWeight: 500 }}>
-                  Connect with {notificationProfiles[expandedNotification.triggeredByUserId]?.fullName.split(' ')[0]}
-                </Typography>
-
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5, flexWrap: 'wrap', mb: 2 }}>
-                  {notificationProfiles[expandedNotification.triggeredByUserId]?.socials?.linkedin && (
-                    <Tooltip title="Open LinkedIn">
-                      <IconButton
-                        component="a"
-                        href={notificationProfiles[expandedNotification.triggeredByUserId].socials.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{
-                          color: '#0077B5',
-                          border: '2px solid #0077B5',
-                          '&:hover': {
-                            backgroundColor: '#f0f8ff'
-                          }
-                        }}
-                      >
-                        <LinkedInIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-
-                  {notificationProfiles[expandedNotification.triggeredByUserId]?.socials?.instagram && (
-                    <Tooltip title="Open Instagram">
-                      <IconButton
-                        component="a"
-                        href={notificationProfiles[expandedNotification.triggeredByUserId].socials.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{
-                          color: '#E4405F',
-                          border: '2px solid #E4405F',
-                          '&:hover': {
-                            backgroundColor: '#fff0f5'
-                          }
-                        }}
-                      >
-                        <InstagramIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-
-                  {notificationProfiles[expandedNotification.triggeredByUserId]?.socials?.github && (
-                    <Tooltip title="Open GitHub">
-                      <IconButton
-                        component="a"
-                        href={notificationProfiles[expandedNotification.triggeredByUserId].socials.github}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{
-                          color: '#333',
-                          border: '2px solid #333',
-                          '&:hover': {
-                            backgroundColor: '#f5f5f5'
-                          }
-                        }}
-                      >
-                        <GitHubIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-
-                  {notificationProfiles[expandedNotification.triggeredByUserId]?.socials?.twitter && (
-                    <Tooltip title="Open Twitter / X">
-                      <IconButton
-                        component="a"
-                        href={notificationProfiles[expandedNotification.triggeredByUserId].socials.twitter}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{
-                          color: '#1DA1F2',
-                          border: '2px solid #1DA1F2',
-                          '&:hover': {
-                            backgroundColor: '#f0f8ff'
-                          }
-                        }}
-                      >
-                        <TwitterIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-
-                  {notificationProfiles[expandedNotification.triggeredByUserId]?.socials?.dribbble && (
-                    <Tooltip title="Open Dribbble">
-                      <IconButton
-                        component="a"
-                        href={notificationProfiles[expandedNotification.triggeredByUserId].socials.dribbble}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{
-                          color: '#EA4C89',
-                          border: '2px solid #EA4C89',
-                          '&:hover': {
-                            backgroundColor: '#fff5f7'
-                          }
-                        }}
-                      >
-                        <EmojiEventsIcon />
-                      </IconButton>
-                    </Tooltip>
+                            <Icon fontSize="small" />
+                            <Box sx={{ display: 'grid' }}>
+                              <Typography sx={{ fontSize: 12, color: '#6b6b6b' }}>{entry.label}</Typography>
+                              <Typography sx={{ fontWeight: 600 }}>{value}</Typography>
+                            </Box>
+                          </Link>
+                        );
+                      })}
+                    </Stack>
+                  ) : (
+                    <Typography color="text.secondary">No contact links shared yet.</Typography>
                   )}
                 </Box>
-              </DialogContent>
-              <DialogActions sx={{ gap: 2, p: 2, justifyContent: 'center' }}>
-                <Button
-                  onClick={() => handleNoThanks(expandedNotification)}
-                  variant="outlined"
-                  color="inherit"
-                >
-                  Dismiss
-                </Button>
-              </DialogActions>
-            </>
-          )}
+              </Box>
+            </DialogContent>
+          ) : null}
         </Dialog>
       </Container>
     </AppShell>
   );
-};
-
-export default NotificationsPage;
+}

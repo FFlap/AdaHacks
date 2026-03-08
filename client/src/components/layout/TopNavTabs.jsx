@@ -5,8 +5,7 @@ import { useNotifications } from "../../context/useNotifications.js";
 const navItems = [
   { label: "Projects", value: "/projects" },
   { label: "People", value: "/people" },
-  { label: "Hacks", value: "/hacks" },
-  { label: "Notifications", value: "/notifications" },
+  { label: "Matches", value: "/notifications" },
   { label: "Profile", value: "/profile" },
 ];
 
@@ -48,7 +47,7 @@ export default function TopNavTabs() {
               value={item.value}
               label={
                 isNotificationTab && unreadCount > 0 ? (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2.25, pr: 1 }}>
                     <span>{item.label}</span>
                     <Badge
                       badgeContent={unreadCount}
