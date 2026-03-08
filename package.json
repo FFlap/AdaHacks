@@ -32,6 +32,8 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
+    "axios": "^1.13.6",
+    "cheerio": "^1.2.0",
     "framer-motion": "^12.35.1"
   }
 }

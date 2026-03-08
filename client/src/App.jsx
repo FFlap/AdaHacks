@@ -6,6 +6,7 @@ import { ProtectedRoute } from './routes/ProtectedRoute.jsx';
 import ProjectsPage from './routes/ProjectsPage.jsx';
 import PeoplePage from './routes/PeoplePage.jsx';
 import NotificationsPage from './routes/NotificationsPage.jsx';
+import HacksPage from './routes/HacksPage.jsx';
 export function App() {
   return (
     <AuthProvider>
@@ -16,6 +17,7 @@ export function App() {
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/people" element={<PeoplePage />} />
+          <Route path="/hacks" element={<HacksPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
         </Route>
         <Route path="*" element={<Navigate replace to="/profile" />} />

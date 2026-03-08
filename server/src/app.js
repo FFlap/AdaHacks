@@ -23,7 +23,8 @@ import {
   syncProjects
 } from './profile.js';
 import { createAuthClient, createRequestClient } from './supabase.js';
-
+import hackathonRoutes from './routes/hackathons.js';
+app.use('/api/hackathons', hackathonRoutes);
 function isAllowedOrigin(origin, configuredOrigin) {
   if (!origin) {
     return true;
