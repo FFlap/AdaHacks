@@ -654,7 +654,6 @@ export function ProfilePage() {
                             <div className="project-card__header">
                               <div>
                                 <p className="project-card__eyebrow">Project {String(index + 1).padStart(2, '0')}</p>
-                                <p className="project-card__title">{project.name || 'Untitled project'}</p>
                               </div>
                               <button
                                 className="button button--secondary button--inline"
