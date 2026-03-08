@@ -31,17 +31,19 @@ const INTEREST_TAGS = [
 ];
 
 const STORAGE_KEY = 'adahacks:saved_hackathons';
-
-// Same blue-grey as profile/project cards
 const CARD_BG = '#eef2ff';
 const CARD_BORDER = '1px solid #dde3f5';
 
 function loadSaved() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]'); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
+  } catch {
+    return [];
+  }
 }
-
 export default function HacksPage() {
+  const [viewer, setViewer] = useState(null);
+
   const [hackathons, setHackathons] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -57,30 +59,65 @@ export default function HacksPage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
   }, [saved]);
 
+  useEffect(() => {
+    const loadViewer = async () => {
+      try {
+        const token = localStorage.getItem('adahacks:token');
+
+        const res = await fetch('/api/v1/me', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        if (!res.ok) throw new Error('Failed to load profile');
+
+        const data = await res.json();
+        setViewer(data.profile ?? null);
+      } catch (err) {
+        console.error(err);
+        setViewer(null);
+      }
+    };
+
+    loadViewer();
+  }, []);
+
   const fetchHackathons = useCallback(async () => {
     setLoading(true);
     setError(null);
     setCurrentIndex(0);
     setHackathons([]);
+
     try {
       const params = new URLSearchParams();
-      if (mode === 'online') params.set('online', 'true');
-      else if (location.trim()) params.set('location', location.trim());
-      if (selectedTags.length) params.set('tags', selectedTags.join(','));
+
+      if (mode === 'online') {
+        params.set('online', 'true');
+      } else if (location.trim()) {
+        params.set('location', location.trim());
+      }
+
+      if (selectedTags.length) {
+        params.set('tags', selectedTags.join(','));
+      }
 
       const res = await fetch(`/api/hackathons?${params}`);
       if (!res.ok) throw new Error(`Server error ${res.status}`);
+
       const data = await res.json();
+
       if (!data.hackathons?.length) {
         setError('No hackathons found. Try different filters.');
         return;
       }
-      const savedIds = new Set(loadSaved().map(h => h.id));
-      const unseen = data.hackathons.filter(h => !savedIds.has(h.id));
+
+      const savedIds = new Set(loadSaved().map((h) => h.id));
+      const unseen = data.hackathons.filter((h) => !savedIds.has(h.id));
+
       if (!unseen.length) {
         setError("You've already saved all available hackathons!");
         return;
       }
+
       setHackathons(unseen);
     } catch (err) {
       setError(err.message || 'Failed to load hackathons.');
@@ -89,11 +126,13 @@ export default function HacksPage() {
     }
   }, [mode, location, selectedTags]);
 
-  useEffect(() => { fetchHackathons(); }, []); // eslint-disable-line
+  useEffect(() => {
+    fetchHackathons();
+  }, []); // eslint-disable-line
 
   const handleSwipe = (dir, item) => {
     if (dir === 'right') {
-      setSaved(prev => prev.some(h => h.id === item.id) ? prev : [...prev, item]);
+      setSaved((prev) => (prev.some((h) => h.id === item.id) ? prev : [...prev, item]));
       setToast({ message: `Saved "${item.title}" 💚`, severity: 'success' });
     }
   };
@@ -101,26 +140,27 @@ export default function HacksPage() {
   const handleButtonPass = () => {
     if (currentIndex >= hackathons.length) return;
     handleSwipe('left', hackathons[currentIndex]);
-    setCurrentIndex(p => p + 1);
+    setCurrentIndex((p) => p + 1);
   };
 
   const handleButtonLike = () => {
     if (currentIndex >= hackathons.length) return;
     handleSwipe('right', hackathons[currentIndex]);
-    setCurrentIndex(p => p + 1);
+    setCurrentIndex((p) => p + 1);
   };
 
   return (
     <AppShell>
       <Container maxWidth="xl" sx={{ py: 4, px: { xs: 2, sm: 3, md: 4 } }}>
-
         <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Typography color="text.secondary" sx={{ '@media (prefers-color-scheme: dark)': { color: '#fff' } }}>
+          <Typography
+            color="text.secondary"
+            sx={{ '@media (prefers-color-scheme: dark)': { color: '#fff' } }}
+          >
             Swipe through hackathons to find ones that match your interests and location.
           </Typography>
         </Box>
 
-        {/* Filter box — light blue card */}
         <Box
           sx={{
             maxWidth: 420,
@@ -135,14 +175,17 @@ export default function HacksPage() {
           <ToggleButtonGroup
             value={mode}
             exclusive
-            onChange={(_, val) => { if (val) setMode(val); }}
+            onChange={(_, val) => {
+              if (val) setMode(val);
+            }}
             size="small"
             sx={{
               mb: 2,
               '& .MuiToggleButton-root': {
                 borderRadius: '999px !important',
                 border: '1px solid #c7d0ef !important',
-                px: 2, py: 0.75,
+                px: 2,
+                py: 0.75,
                 fontSize: 13,
                 fontWeight: 600,
                 color: '#4a5080',
@@ -167,11 +210,12 @@ export default function HacksPage() {
 
           {mode === 'location' && (
             <TextField
-              fullWidth size="small"
+              fullWidth
+              size="small"
               placeholder="City or region, e.g. Toronto"
               value={location}
-              onChange={e => setLocation(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && fetchHackathons()}
+              onChange={(e) => setLocation(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && fetchHackathons()}
               sx={{
                 mb: 2,
                 '& .MuiOutlinedInput-root': {
@@ -182,16 +226,25 @@ export default function HacksPage() {
             />
           )}
 
-          <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#6b7280', fontWeight: 600 }}>
+          <Typography
+            variant="caption"
+            sx={{ display: 'block', mb: 1, color: '#6b7280', fontWeight: 600 }}
+          >
             Filter by interest
           </Typography>
+
           <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
-            {INTEREST_TAGS.map(tag => (
+            {INTEREST_TAGS.map((tag) => (
               <Chip
-                key={tag} label={tag} size="small" clickable
-                onClick={() => setSelectedTags(prev =>
-                  prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-                )}
+                key={tag}
+                label={tag}
+                size="small"
+                clickable
+                onClick={() =>
+                  setSelectedTags((prev) =>
+                    prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+                  )
+                }
                 sx={{
                   borderRadius: 999,
                   fontWeight: 600,
@@ -209,8 +262,11 @@ export default function HacksPage() {
           </Stack>
 
           <Button
-            variant="contained" disableElevation fullWidth
-            onClick={fetchHackathons} disabled={loading}
+            variant="contained"
+            disableElevation
+            fullWidth
+            onClick={fetchHackathons}
+            disabled={loading}
             sx={{
               borderRadius: 999,
               textTransform: 'none',
@@ -223,7 +279,6 @@ export default function HacksPage() {
           </Button>
         </Box>
 
-        {/* Loading */}
         {loading && (
           <Box sx={{ mt: 8, display: 'grid', placeItems: 'center', gap: 2 }}>
             <CircularProgress color="inherit" size={28} />
@@ -231,14 +286,12 @@ export default function HacksPage() {
           </Box>
         )}
 
-        {/* Error */}
         {!loading && error && (
           <Alert severity="warning" sx={{ maxWidth: 420, mx: 'auto', mb: 3, borderRadius: 3 }}>
             {error}
           </Alert>
         )}
 
-        {/* Swipe deck */}
         {!loading && !error && hackathons.length > 0 && (
           <>
             <SwipeDeck
@@ -246,18 +299,26 @@ export default function HacksPage() {
               currentIndex={currentIndex}
               setCurrentIndex={setCurrentIndex}
               onSwipe={handleSwipe}
-              renderCard={item => <HackathonSwipeCard hackathon={item} />}
+              renderCard={(item) => (
+                <HackathonSwipeCard
+                  hackathon={item}
+                  viewer={viewer}
+                />
+              )}
             />
             <SwipeActionButtons onPass={handleButtonPass} onLike={handleButtonLike} />
           </>
         )}
 
-        {/* Saved grid */}
         {saved.length > 0 && (
           <Box sx={{ mt: 6 }}>
             <Typography
               color="text.secondary"
-              sx={{ mb: 3, textAlign: 'center', '@media (prefers-color-scheme: dark)': { color: '#fff' } }}
+              sx={{
+                mb: 3,
+                textAlign: 'center',
+                '@media (prefers-color-scheme: dark)': { color: '#fff' },
+              }}
             >
               Your saved hackathons
             </Typography>
@@ -274,7 +335,7 @@ export default function HacksPage() {
                 alignItems: 'start',
               }}
             >
-              {saved.map(h => (
+              {saved.map((h) => (
                 <Card
                   elevation={0}
                   key={h.id}
@@ -306,11 +367,13 @@ export default function HacksPage() {
                         {h.deadline}
                       </Typography>
                     )}
+
                     {h.location && (
                       <Typography color="text.secondary" sx={{ fontSize: 13 }}>
                         {h.location}
                       </Typography>
                     )}
+
                     {h.prize && (
                       <Typography sx={{ mt: 0.75, fontSize: 13, fontWeight: 600, color: '#374151' }}>
                         💰 {h.prize}
@@ -340,9 +403,10 @@ export default function HacksPage() {
                           View
                         </Button>
                       )}
+
                       <Button
                         size="small"
-                        onClick={() => setSaved(prev => prev.filter(x => x.id !== h.id))}
+                        onClick={() => setSaved((prev) => prev.filter((x) => x.id !== h.id))}
                         startIcon={<CloseIcon sx={{ fontSize: '14px !important' }} />}
                         sx={{
                           borderRadius: 999,
@@ -353,7 +417,11 @@ export default function HacksPage() {
                           bgcolor: 'rgba(255,255,255,0.6)',
                           color: '#888',
                           px: 1.5,
-                          '&:hover': { color: '#ef4444', borderColor: '#fca5a5', bgcolor: 'rgba(239,68,68,0.05)' },
+                          '&:hover': {
+                            color: '#ef4444',
+                            borderColor: '#fca5a5',
+                            bgcolor: 'rgba(239,68,68,0.05)',
+                          },
                         }}
                       >
                         Remove
@@ -365,7 +433,6 @@ export default function HacksPage() {
             </Box>
           </Box>
         )}
-
       </Container>
 
       <Snackbar
@@ -374,7 +441,11 @@ export default function HacksPage() {
         onClose={() => setToast(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={toast?.severity ?? 'info'} onClose={() => setToast(null)} sx={{ borderRadius: 3 }}>
+        <Alert
+          severity={toast?.severity ?? 'info'}
+          onClose={() => setToast(null)}
+          sx={{ borderRadius: 3 }}
+        >
           {toast?.message}
         </Alert>
       </Snackbar>

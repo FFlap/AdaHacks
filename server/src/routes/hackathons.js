@@ -1,6 +1,6 @@
-// server/src/routes/hackathons.js
 import express from 'express';
 import puppeteer from 'puppeteer';
+import { createHackathonOpenRouterClient } from '../lib/openrouterHackathons.js';
 
 const router = express.Router();
 
@@ -16,12 +16,14 @@ async function getBrowser() {
   return browser;
 }
 
-// ── Scrape MLH with Puppeteer (runs JS, gets real DOM) ───────────────────────
+// ── Scrape MLH with Puppeteer ────────────────────────────────────────────────
 async function fetchMLHHackathons() {
   const b = await getBrowser();
   const page = await b.newPage();
 
-  await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+  await page.setUserAgent(
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  );
 
   try {
     await page.goto('https://mlh.io/seasons/2025/events', {
@@ -29,26 +31,29 @@ async function fetchMLHHackathons() {
       timeout: 20000,
     });
 
-    // Wait for event cards to appear
-    await page.waitForSelector('a.event, .event-wrapper, [class*="event"]', { timeout: 8000 })
+    await page
+      .waitForSelector('a.event, .event-wrapper, [class*="event"]', { timeout: 8000 })
       .catch(() => console.log('MLH: selector wait timed out, parsing anyway'));
 
     const hackathons = await page.evaluate(() => {
       const results = [];
-
-      // Try every plausible card container
       const cards = document.querySelectorAll(
         'a.event, .event-wrapper a, [class*="event-tile"], [class*="hackathon-event"]'
       );
 
-      cards.forEach(card => {
-        const title = card.querySelector('h3, h2, [class*="name"], [class*="title"]')?.innerText?.trim();
+      cards.forEach((card) => {
+        const title = card
+          .querySelector('h3, h2, [class*="name"], [class*="title"]')
+          ?.innerText?.trim();
+
         if (!title) return;
 
-        const url   = card.href || card.querySelector('a')?.href || '';
-        const img   = card.querySelector('img')?.src ?? null;
-        const date  = card.querySelector('[class*="date"], time')?.innerText?.trim() ?? null;
-        const loc   = card.querySelector('[class*="location"], [class*="venue"], [class*="where"]')?.innerText?.trim() ?? null;
+        const url = card.href || card.querySelector('a')?.href || '';
+        const img = card.querySelector('img')?.src ?? null;
+        const date = card.querySelector('[class*="date"], time')?.innerText?.trim() ?? null;
+        const loc = card
+          .querySelector('[class*="location"], [class*="venue"], [class*="where"]')
+          ?.innerText?.trim() ?? null;
 
         results.push({ title, url, img, date, loc });
       });
@@ -56,19 +61,19 @@ async function fetchMLHHackathons() {
       return results;
     });
 
-    return hackathons.map(h => ({
-      id:           h.url || h.title,
-      title:        h.title,
-      url:          h.url,
-      thumbnail:    h.img,
-      prize:        null,
-      deadline:     h.date,
+    return hackathons.map((h) => ({
+      id: h.url || h.title,
+      title: h.title,
+      url: h.url,
+      thumbnail: h.img,
+      prize: null,
+      deadline: h.date,
       participants: null,
-      location:     h.loc || 'See event page',
-      tags:         [],
-      isOnline:     h.loc?.toLowerCase().includes('online') ?? false,
+      location: h.loc || 'See event page',
+      tags: [],
+      isOnline: h.loc?.toLowerCase().includes('online') ?? false,
       organizerName: 'MLH',
-      source:       'mlh',
+      source: 'mlh',
     }));
   } finally {
     await page.close();
@@ -80,9 +85,11 @@ async function fetchDevpostHackathons({ online = false, location = '' }) {
   const b = await getBrowser();
   const page = await b.newPage();
 
-  await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+  await page.setUserAgent(
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  );
 
-  const params = new URLSearchParams({ 'status[]': 'open', 'order_by': 'deadline' });
+  const params = new URLSearchParams({ 'status[]': 'open', order_by: 'deadline' });
   if (online) params.append('challenge_type[]', 'online');
   else if (location) params.set('search', location);
 
@@ -92,24 +99,27 @@ async function fetchDevpostHackathons({ online = false, location = '' }) {
       timeout: 20000,
     });
 
-    await page.waitForSelector('.hackathon-tile, article', { timeout: 8000 })
+    await page
+      .waitForSelector('.hackathon-tile, article', { timeout: 8000 })
       .catch(() => console.log('Devpost: selector wait timed out'));
 
     const hackathons = await page.evaluate(() => {
       const results = [];
 
-      document.querySelectorAll('.hackathon-tile, article[class*="hackathon"]').forEach(card => {
-        const title        = card.querySelector('h2, h3, .hackathon-name')?.innerText?.trim();
-        const url          = card.querySelector('a')?.href ?? '';
-        const img          = card.querySelector('img')?.src ?? null;
-        const prize        = card.querySelector('.prize-amount, .prizes')?.innerText?.trim() ?? null;
-        const deadline     = card.querySelector('.submission-period, .deadline')?.innerText?.trim() ?? null;
+      document.querySelectorAll('.hackathon-tile, article[class*="hackathon"]').forEach((card) => {
+        const title = card.querySelector('h2, h3, .hackathon-name')?.innerText?.trim();
+        const url = card.querySelector('a')?.href ?? '';
+        const img = card.querySelector('img')?.src ?? null;
+        const prize = card.querySelector('.prize-amount, .prizes')?.innerText?.trim() ?? null;
+        const deadline = card.querySelector('.submission-period, .deadline')?.innerText?.trim() ?? null;
         const participants = card.querySelector('.participants, .registrations-count')?.innerText?.trim() ?? null;
-        const location     = card.querySelector('.location, [class*="location"]')?.innerText?.trim() ?? null;
-        const tags         = [...card.querySelectorAll('.theme-label, [class*="theme"]')]
-                               .map(t => t.innerText.trim()).filter(Boolean);
+        const location = card.querySelector('.location, [class*="location"]')?.innerText?.trim() ?? null;
+        const tags = [...card.querySelectorAll('.theme-label, [class*="theme"]')]
+          .map((t) => t.innerText.trim())
+          .filter(Boolean);
 
         if (!title) return;
+
         results.push({ title, url, img, prize, deadline, participants, location, tags });
       });
 
@@ -117,18 +127,18 @@ async function fetchDevpostHackathons({ online = false, location = '' }) {
     });
 
     return hackathons.map((h, i) => ({
-      id:           h.url || String(i),
-      title:        h.title,
-      url:          h.url,
-      thumbnail:    h.img,
-      prize:        h.prize,
-      deadline:     h.deadline,
+      id: h.url || String(i),
+      title: h.title,
+      url: h.url,
+      thumbnail: h.img,
+      prize: h.prize,
+      deadline: h.deadline,
       participants: h.participants,
-      location:     h.location || (online ? 'Online' : 'In-person'),
-      tags:         h.tags,
-      isOnline:     online || h.location?.toLowerCase().includes('online') || false,
+      location: h.location || (online ? 'Online' : 'In-person'),
+      tags: h.tags,
+      isOnline: online || h.location?.toLowerCase().includes('online') || false,
       organizerName: null,
-      source:       'devpost',
+      source: 'devpost',
     }));
   } finally {
     await page.close();
@@ -137,9 +147,12 @@ async function fetchDevpostHackathons({ online = false, location = '' }) {
 
 function matchesTags(hackathon, tags) {
   if (!tags.length) return true;
+
   const haystack = [...hackathon.tags, hackathon.title, hackathon.location]
-    .join(' ').toLowerCase();
-  return tags.some(t =>
+    .join(' ')
+    .toLowerCase();
+
+  return tags.some((t) =>
     haystack.includes(t.toLowerCase().replace(' / ', ' ').replace('/', ' '))
   );
 }
@@ -148,13 +161,12 @@ function matchesTags(hackathon, tags) {
 router.get('/', async (req, res) => {
   const { online, location, tags: tagsParam } = req.query;
   const filterTags = tagsParam
-    ? tagsParam.split(',').map(t => t.trim()).filter(Boolean)
+    ? tagsParam.split(',').map((t) => t.trim()).filter(Boolean)
     : [];
 
   let hackathons = [];
   let source = 'none';
 
-  // Try Devpost first (more hackathons), fall back to MLH
   try {
     hackathons = await fetchDevpostHackathons({
       online: online === 'true',
@@ -164,6 +176,7 @@ router.get('/', async (req, res) => {
     console.log(`Devpost: fetched ${hackathons.length} hackathons`);
   } catch (err) {
     console.error('Devpost failed:', err.message);
+
     try {
       hackathons = await fetchMLHHackathons();
       source = 'mlh';
@@ -175,10 +188,37 @@ router.get('/', async (req, res) => {
   }
 
   let filtered = hackathons;
-  if (online === 'true') filtered = filtered.filter(h => h.isOnline);
-  if (filterTags.length) filtered = filtered.filter(h => matchesTags(h, filterTags));
+  if (online === 'true') filtered = filtered.filter((h) => h.isOnline);
+  if (filterTags.length) filtered = filtered.filter((h) => matchesTags(h, filterTags));
 
   res.json({ hackathons: filtered, count: filtered.length, source });
+});
+
+// POST /api/hackathons/analyze
+router.post('/analyze', async (req, res) => {
+  try {
+    const { viewer, hackathon } = req.body ?? {};
+
+    if (!hackathon?.title) {
+      return res.status(400).json({ error: 'Hackathon is required.' });
+    }
+
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: 'Missing OPENROUTER_API_KEY.' });
+    }
+
+    const client = createHackathonOpenRouterClient({
+      openRouterApiKey: process.env.OPENROUTER_API_KEY,
+      openRouterModel: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
+      clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    });
+
+    const result = await client.analyzeHackathon({ viewer, hackathon });
+    return res.json(result);
+  } catch (error) {
+    console.error('Hackathon analysis failed:', error);
+    return res.status(500).json({ error: 'Failed to analyze hackathon.' });
+  }
 });
 
 // Clean up browser on process exit

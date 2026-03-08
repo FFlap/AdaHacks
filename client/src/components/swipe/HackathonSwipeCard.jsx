@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import {
-  Avatar,
   Box,
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Dialog,
   DialogContent,
   Divider,
@@ -19,8 +19,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
-// ── Details Dialog ────────────────────────────────────────────────────────────
-function HackathonDetailsDialog({ open, hackathon, onClose }) {
+function HackathonDetailsDialog({ open, hackathon, onClose, analysis, loading }) {
   if (!hackathon) return null;
 
   return (
@@ -39,7 +38,6 @@ function HackathonDetailsDialog({ open, hackathon, onClose }) {
       }}
     >
       <DialogContent sx={{ p: 0 }}>
-        {/* Header */}
         <Box sx={{ px: 3, pt: 3, pb: 2 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
             <Box>
@@ -67,29 +65,58 @@ function HackathonDetailsDialog({ open, hackathon, onClose }) {
         </Box>
 
         <Box sx={{ px: 3, pb: 3, display: 'grid', gap: 2.5 }}>
-          {/* Meta */}
           <Stack spacing={1.25}>
             {hackathon.location && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <LocationOnOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary">{hackathon.location}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {hackathon.location}
+                </Typography>
               </Stack>
             )}
             {hackathon.deadline && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <CalendarTodayIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary">{hackathon.deadline}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {hackathon.deadline}
+                </Typography>
               </Stack>
             )}
             {hackathon.participants && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <PeopleOutlineIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary">{hackathon.participants}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {hackathon.participants}
+                </Typography>
               </Stack>
             )}
           </Stack>
 
-          {/* Prize */}
+          <Divider />
+
+          <Box>
+            <Typography sx={{ fontWeight: 600, color: '#111111', mb: 1 }}>
+              AI summary
+            </Typography>
+
+            {loading ? (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <CircularProgress size={18} />
+                <Typography variant="body2" color="text.secondary">
+                  Generating summary...
+                </Typography>
+              </Stack>
+            ) : analysis?.summary ? (
+              <Typography sx={{ color: '#303030', lineHeight: 1.7 }}>
+                {analysis.summary}
+              </Typography>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                Summary unavailable.
+              </Typography>
+            )}
+          </Box>
+
           {hackathon.prize && (
             <>
               <Divider />
@@ -104,7 +131,6 @@ function HackathonDetailsDialog({ open, hackathon, onClose }) {
             </>
           )}
 
-          {/* Tags */}
           {hackathon.tags?.length > 0 && (
             <>
               <Divider />
@@ -113,7 +139,7 @@ function HackathonDetailsDialog({ open, hackathon, onClose }) {
                   Themes
                 </Typography>
                 <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                  {hackathon.tags.map(tag => (
+                  {hackathon.tags.map((tag) => (
                     <Chip
                       key={tag}
                       label={tag}
@@ -131,7 +157,6 @@ function HackathonDetailsDialog({ open, hackathon, onClose }) {
             </>
           )}
 
-          {/* Link */}
           {hackathon.url && (
             <>
               <Divider />
@@ -141,9 +166,13 @@ function HackathonDetailsDialog({ open, hackathon, onClose }) {
                 target="_blank"
                 rel="noreferrer"
                 sx={{
-                  display: 'flex', alignItems: 'center', gap: 1,
-                  color: '#111111', textDecoration: 'none',
-                  fontWeight: 600, fontSize: 14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  color: '#111111',
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  fontSize: 14,
                   '&:hover': { textDecoration: 'underline' },
                 }}
               >
@@ -158,9 +187,47 @@ function HackathonDetailsDialog({ open, hackathon, onClose }) {
   );
 }
 
-// ── Card ──────────────────────────────────────────────────────────────────────
-export default function HackathonSwipeCard({ hackathon }) {
+export default function HackathonSwipeCard({ hackathon, viewer }) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleOpenDetails = async (e) => {
+    e.stopPropagation();
+    setDialogOpen(true);
+
+    if (analysis || loading) return;
+
+    try {
+      setLoading(true);
+
+      const response = await fetch('/api/hackathons/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hackathon,
+          viewer,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to analyze hackathon.');
+      }
+
+      setAnalysis({
+        summary: data?.summary ?? '',
+      });
+    } catch (error) {
+      console.error(error);
+      setAnalysis({
+        summary: 'Unable to generate a summary for this hackathon right now.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -175,7 +242,6 @@ export default function HackathonSwipeCard({ hackathon }) {
           overflow: 'hidden',
         }}
       >
-        {/* Thumbnail */}
         <Box
           sx={{
             height: 160,
@@ -185,18 +251,22 @@ export default function HackathonSwipeCard({ hackathon }) {
             position: 'relative',
           }}
         >
-          <Box sx={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 60%)',
-          }} />
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 60%)',
+            }}
+          />
 
-          {/* Prize — bottom left */}
           {hackathon.prize && (
             <Chip
               label={`💰 ${hackathon.prize}`}
               size="small"
               sx={{
-                position: 'absolute', bottom: 12, left: 12,
+                position: 'absolute',
+                bottom: 12,
+                left: 12,
                 background: 'rgba(255,255,255,0.92)',
                 color: '#111',
                 fontWeight: 700,
@@ -206,13 +276,14 @@ export default function HackathonSwipeCard({ hackathon }) {
             />
           )}
 
-          {/* Details icon — bottom right */}
           <IconButton
             aria-label="View hackathon details"
-            onClick={(e) => { e.stopPropagation(); setDialogOpen(true); }}
+            onClick={handleOpenDetails}
             size="small"
             sx={{
-              position: 'absolute', bottom: 8, right: 8,
+              position: 'absolute',
+              bottom: 8,
+              right: 8,
               background: 'rgba(255,255,255,0.92)',
               backdropFilter: 'blur(6px)',
               border: '1px solid rgba(0,0,0,0.08)',
@@ -224,7 +295,6 @@ export default function HackathonSwipeCard({ hackathon }) {
         </Box>
 
         <CardContent sx={{ p: 2.5 }}>
-          {/* Title */}
           <Typography
             variant="h5"
             sx={{ fontWeight: 700, letterSpacing: '-0.02em', color: '#111', mb: 0.5 }}
@@ -238,32 +308,36 @@ export default function HackathonSwipeCard({ hackathon }) {
             </Typography>
           )}
 
-          {/* Meta */}
           <Stack spacing={1} sx={{ mb: 2 }}>
             {hackathon.location && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <LocationOnOutlinedIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary">{hackathon.location}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {hackathon.location}
+                </Typography>
               </Stack>
             )}
             {hackathon.deadline && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <CalendarTodayIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary">{hackathon.deadline}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {hackathon.deadline}
+                </Typography>
               </Stack>
             )}
             {hackathon.participants && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <PeopleOutlineIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary">{hackathon.participants}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {hackathon.participants}
+                </Typography>
               </Stack>
             )}
           </Stack>
 
-          {/* Tags */}
           {hackathon.tags?.length > 0 && (
             <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
-              {hackathon.tags.map(tag => (
+              {hackathon.tags.map((tag) => (
                 <Chip
                   key={tag}
                   label={tag}
@@ -281,6 +355,8 @@ export default function HackathonSwipeCard({ hackathon }) {
         open={dialogOpen}
         hackathon={hackathon}
         onClose={() => setDialogOpen(false)}
+        analysis={analysis}
+        loading={loading}
       />
     </>
   );

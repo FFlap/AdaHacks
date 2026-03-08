@@ -165,7 +165,7 @@ export default function ProjectsPage() {
         {status === 'loading' ? (
           <Box sx={{ mt: 8, display: 'grid', placeItems: 'center', gap: 2 }}>
             <CircularProgress color="inherit" size={28} />
-            <Typography color="text.secondary">Loading live projects...</Typography>
+            <Typography color="#e5e7eb">Loading live projects...</Typography>
           </Box>
         ) : null}
 

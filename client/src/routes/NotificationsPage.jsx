@@ -97,7 +97,7 @@ export default function NotificationsPage() {
         {loading ? (
           <Box sx={{ mt: 8, display: 'grid', placeItems: 'center', gap: 2 }}>
             <CircularProgress color="inherit" size={28} />
-            <Typography color="text.secondary">Loading matches...</Typography>
+            <Typography color="#e5e7eb">Loading matches...</Typography>
           </Box>
         ) : null}
 

@@ -90,7 +90,7 @@ export default function PeoplePage() {
         {status === 'loading' ? (
           <Box sx={{ mt: 8, display: 'grid', placeItems: 'center', gap: 2 }}>
             <CircularProgress color="inherit" size={28} />
-            <Typography color="text.secondary">Loading people...</Typography>
+            <Typography color="#e5e7eb">Loading people...</Typography>
           </Box>
         ) : null}
 
