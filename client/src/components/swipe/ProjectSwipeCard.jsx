@@ -50,7 +50,7 @@ export default function ProjectSwipeCard({ project, onOpenSummary }) {
         sx={{
           p: 3,
           flex: 1,
-          overflowY: 'auto',
+          overflowY: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           gap: 2.5,
@@ -78,7 +78,7 @@ export default function ProjectSwipeCard({ project, onOpenSummary }) {
             <InfoOutlinedIcon sx={{ fontSize: 20 }} />
           </IconButton>
 
-          <Box sx={{ textAlign: 'center' }}>
+          <Box sx={{ textAlign: 'center', pr: { xs: 5, sm: 0 } }}>
             <Typography sx={{ fontWeight: 700, fontSize: 30, letterSpacing: '-0.02em', color: ink, lineHeight: 1.3, mb: 2.5 }}>
               {project.name}
             </Typography>
