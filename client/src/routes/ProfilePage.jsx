@@ -521,6 +521,7 @@ export function ProfilePage() {
                         value={form.bio}
                         onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
                         required
+                        placeholder='Add something about yourself!'
                       />
                     </label>
                     <section className="profile-section">
