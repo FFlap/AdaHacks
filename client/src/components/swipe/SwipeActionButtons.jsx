@@ -9,7 +9,7 @@ export default function SwipeActionButtons({ onPass, onLike }) {
         elevation={0}
         sx={{ borderRadius: "50%", border: "1px solid #e5e7eb", p: 1 }}
       >
-        <IconButton onClick={onPass}>
+        <IconButton aria-label="Pass" onClick={onPass}>
           <CloseIcon />
         </IconButton>
       </Paper>
@@ -18,7 +18,7 @@ export default function SwipeActionButtons({ onPass, onLike }) {
         elevation={0}
         sx={{ borderRadius: "50%", border: "1px solid #e5e7eb", p: 1 }}
       >
-        <IconButton onClick={onLike} color="primary">
+        <IconButton aria-label="Like" onClick={onLike} color="primary">
           <FavoriteIcon />
         </IconButton>
       </Paper>

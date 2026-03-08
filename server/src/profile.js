@@ -1,5 +1,7 @@
-export const profileColumns = 'id, full_name, bio, avatar_path, skills, created_at, updated_at';
+export const profileColumns = 'id, full_name, bio, avatar_path, contact_links, skills, created_at, updated_at';
 export const projectColumns = 'id, name, theme, description, tech_stack, created_at';
+
+const contactLinkKeys = ['linkedin', 'instagram', 'twitter', 'github', 'email', 'phone'];
 
 export function normalizeSkills(skills = []) {
   return [...new Set(
@@ -17,6 +19,18 @@ export function normalizeProject(project) {
     description: project.description.trim(),
     techStack: normalizeSkills(project.techStack ?? [])
   };
+}
+
+export function normalizeContactLinks(contactLinks = {}) {
+  return contactLinkKeys.reduce((accumulator, key) => {
+    const value = typeof contactLinks?.[key] === 'string' ? contactLinks[key].trim() : '';
+
+    if (value) {
+      accumulator[key] = value;
+    }
+
+    return accumulator;
+  }, {});
 }
 
 function encodeStoragePath(path) {
@@ -40,6 +54,7 @@ export function mapProfileRow(row, supabaseUrl) {
     fullName: row.full_name,
     bio: row.bio,
     avatarUrl: getAvatarUrl(supabaseUrl, row.avatar_path),
+    contactLinks: normalizeContactLinks(row.contact_links ?? {}),
     skills: normalizeSkills(row.skills ?? []),
     projects: [],
     createdAt: row.created_at,
@@ -77,7 +92,7 @@ export async function loadProfileWithProjects(client, userId, supabaseUrl) {
   return profile;
 }
 
-function toDisplayName(fullName, email) {
+export function toDisplayName(fullName, email) {
   const normalizedName = fullName?.trim();
 
   if (normalizedName) {
@@ -165,6 +180,11 @@ export async function listDiscoverablePeople(client, supabaseUrl) {
   }
 
   return data.map((row) => mapPeopleFeedRow(row, supabaseUrl));
+}
+
+export async function findDiscoverablePerson(client, supabaseUrl, personId) {
+  const people = await listDiscoverablePeople(client, supabaseUrl);
+  return people.find((person) => person.id === personId) ?? null;
 }
 
 export async function syncProjects(client, userId, projects) {

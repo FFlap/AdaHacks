@@ -41,9 +41,12 @@
 
    That push now creates:
    - the `profiles` columns for `avatar_path` and `skills`
+   - the `profiles.contact_links` field for notification-only contact and social links
    - the `projects` table used by the profile page project cards
+   - the `swipes` table used to persist pass/like decisions and hide seen cards
    - the authenticated project-discovery feed function used by `/projects`
    - the authenticated people-discovery feed function used by `/people`
+   - the authenticated notifications feed function used by `/notifications`
    - the public `profile-images` storage bucket
    - storage policies so each user can upload only their own avatar file
 
@@ -76,6 +79,13 @@ If Vite starts on a different port such as `5174`, update `CLIENT_ORIGIN` in the
   - missing skills
   - a contribution summary
 - If you rotate the OpenRouter key, update the root `.env` and restart `npm run dev`.
+
+## Swipes and Notifications
+
+- Swiping left or pressing the heart now writes a persisted swipe record through `POST /api/v1/swipes`.
+- Once a user swipes on a project or person, that same card is filtered out of future feed loads for that user.
+- The owner of the affected profile or project sees the event in `/notifications`.
+- Contact and social links saved in the profile editor are only exposed inside notification detail views.
 
 ## Commands
 

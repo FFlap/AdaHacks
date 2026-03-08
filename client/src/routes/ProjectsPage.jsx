@@ -6,7 +6,7 @@ import SwipeDeck from '../components/swipe/SwipeDeck';
 import ProjectSwipeCard from '../components/swipe/ProjectSwipeCard';
 import SwipeActionButtons from '../components/swipe/SwipeActionButtons';
 import { useAuth } from '../context/useAuth.js';
-import { analyzeProject, getProjectsFeed } from '../lib/api.js';
+import { analyzeProject, createSwipe, getProjectsFeed } from '../lib/api.js';
 
 export default function ProjectsPage() {
   const { session } = useAuth();
@@ -46,8 +46,33 @@ export default function ProjectsPage() {
     loadProjects();
   }, [session?.access_token]);
 
+  async function persistSwipe(direction, project) {
+    if (!session?.access_token || !project) {
+      return;
+    }
+
+    try {
+      await createSwipe(session.access_token, {
+        targetType: 'project',
+        targetId: project.id,
+        decision: direction === 'left' ? 'pass' : 'like'
+      });
+    } catch (swipeError) {
+      setError(swipeError.message);
+      try {
+        const response = await getProjectsFeed(session.access_token);
+        setProjects(response);
+        setCurrentIndex(0);
+        setStatus('ready');
+      } catch (reloadError) {
+        setError(reloadError.message);
+        setStatus('error');
+      }
+    }
+  }
+
   const handleSwipe = (direction, item) => {
-    console.log('Swiped:', direction, item);
+    void persistSwipe(direction, item);
   };
 
   async function openProjectAnalysis(project, options = {}) {
