@@ -4,13 +4,22 @@ import helmet from 'helmet';
 import {
   errorResponseSchema,
   meResponseSchema,
+  notificationReadResponseSchema,
+  notificationsSchema,
   peopleFeedSchema,
   projectAnalysisSchema,
   projectFeedSchema,
+  swipeInputSchema,
+  swipeResponseSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
 import { getEnv } from './env.js';
 import { HttpError, toErrorResponse } from './errors.js';
+import {
+  createSwipe,
+  listNotifications,
+  markNotificationRead
+} from './notifications.js';
 import { createOpenRouterClient } from './openrouter.js';
 import {
   findDiscoverableProject,
@@ -18,6 +27,7 @@ import {
   listDiscoverableProjects,
   loadProfileWithProjects,
   mapProfileRow,
+  normalizeContactLinks,
   normalizeSkills,
   profileColumns,
   syncProjects
@@ -121,6 +131,21 @@ export function createApp({
     }
   });
 
+  app.post('/api/v1/swipes', async (request, response, next) => {
+    try {
+      const { user } = request.auth;
+      const client = request.supabase;
+      const input = swipeInputSchema.parse(request.body);
+      const payload = swipeResponseSchema.parse(
+        await createSwipe(client, user.id, input, env.supabaseUrl)
+      );
+
+      response.status(201).json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post('/api/v1/projects/:projectId/analysis', async (request, response, next) => {
     try {
       const { projectId } = request.params;
@@ -176,6 +201,33 @@ export function createApp({
     }
   });
 
+  app.get('/api/v1/notifications', async (request, response, next) => {
+    try {
+      const client = request.supabase;
+      const payload = notificationsSchema.parse(
+        await listNotifications(client, env.supabaseUrl)
+      );
+
+      response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/v1/notifications/:notificationId/read', async (request, response, next) => {
+    try {
+      const { user } = request.auth;
+      const client = request.supabase;
+      const payload = notificationReadResponseSchema.parse(
+        await markNotificationRead(client, request.params.notificationId, user.id)
+      );
+
+      response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.patch('/api/v1/me/profile', async (request, response, next) => {
     try {
       const { user } = request.auth;
@@ -185,6 +237,7 @@ export function createApp({
         id: user.id,
         full_name: input.fullName,
         bio: input.bio,
+        contact_links: normalizeContactLinks(input.contactLinks),
         skills: normalizeSkills(input.skills)
       };
 

@@ -11,6 +11,7 @@ const authMock = {
 
 const apiMocks = vi.hoisted(() => ({
   analyzeProject: vi.fn(),
+  createSwipe: vi.fn(),
   getProjectsFeed: vi.fn()
 }));
 
@@ -20,6 +21,7 @@ vi.mock('../context/useAuth.js', () => ({
 
 vi.mock('../lib/api.js', () => ({
   analyzeProject: apiMocks.analyzeProject,
+  createSwipe: apiMocks.createSwipe,
   getProjectsFeed: apiMocks.getProjectsFeed
 }));
 
@@ -30,6 +32,7 @@ vi.mock('../components/layout/AppShell.jsx', () => ({
 describe('ProjectsPage', () => {
   beforeEach(() => {
     apiMocks.analyzeProject.mockReset();
+    apiMocks.createSwipe.mockReset();
     apiMocks.getProjectsFeed.mockReset();
     apiMocks.getProjectsFeed.mockResolvedValue([
       {
@@ -50,6 +53,12 @@ describe('ProjectsPage', () => {
       matchingSkills: ['Supabase'],
       missingSkills: ['Node.js'],
       contributionSummary: 'You can help on the data model and wire the frontend state to the API.'
+    });
+    apiMocks.createSwipe.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440006',
+      targetType: 'project',
+      targetId: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
+      decision: 'like'
     });
   });
 
@@ -100,5 +109,23 @@ describe('ProjectsPage', () => {
       expect(screen.getByText('How you can contribute')).toBeInTheDocument();
     });
     expect(apiMocks.analyzeProject).toHaveBeenCalledTimes(1);
+  });
+
+  it('persists a project swipe when the user taps like', async () => {
+    const user = userEvent.setup();
+
+    render(<ProjectsPage />);
+
+    expect(await screen.findByText('Orbit')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /like/i }));
+
+    await waitFor(() => {
+      expect(apiMocks.createSwipe).toHaveBeenCalledWith('token-123', {
+        targetType: 'project',
+        targetId: 'b92a1ba0-e6d6-4e92-b95b-11e7c79b74c9',
+        decision: 'like'
+      });
+    });
   });
 });

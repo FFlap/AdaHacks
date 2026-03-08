@@ -58,6 +58,7 @@ describe('ProfilePage', () => {
         fullName: 'Ada Lovelace',
         bio: 'Analytical engine enthusiast',
         avatarUrl: null,
+        contactLinks: {},
         skills: ['React', 'Supabase'],
         projects: [
           {
@@ -82,6 +83,10 @@ describe('ProfilePage', () => {
         fullName: 'Ada Byron',
         bio: 'First programmer',
         avatarUrl: 'https://example.supabase.co/storage/v1/object/public/profile-images/34cd/avatar',
+        contactLinks: {
+          github: 'https://github.com/adabyron',
+          email: 'ada@example.com'
+        },
         skills: ['React', 'Supabase', 'Node.js'],
         projects: [
           {
@@ -116,6 +121,12 @@ describe('ProfilePage', () => {
     });
     fireEvent.change(screen.getByLabelText(/bio/i), {
       target: { value: 'First programmer' }
+    });
+    fireEvent.change(screen.getByLabelText(/github/i), {
+      target: { value: 'https://github.com/adabyron' }
+    });
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
+      target: { value: 'ada@example.com' }
     });
     fireEvent.change(screen.getByLabelText(/tech stack & frameworks/i), {
       target: { value: 'Node.js' }
@@ -155,6 +166,10 @@ describe('ProfilePage', () => {
         fullName: 'Ada Byron',
         bio: 'First programmer',
         avatarPath: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620/avatar',
+        contactLinks: {
+          github: 'https://github.com/adabyron',
+          email: 'ada@example.com'
+        },
         skills: ['React', 'Supabase', 'Node.js'],
         projects: [
           {
