@@ -523,6 +523,7 @@ export function ProfilePage() {
                       <textarea
                         name="bio"
                         rows="6"
+                        style={{ resize: 'none' }}
                         value={form.bio}
                         onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
                         required
@@ -729,6 +730,7 @@ export function ProfilePage() {
                               <textarea
                                 aria-label={`Project ${index + 1} description`}
                                 rows="4"
+                                style={{ resize: 'none' }}
                                 placeholder="What does it do and why does it matter?"
                                 value={project.description}
                                 onChange={(event) => updateProjectField(project.uiKey, 'description', event.target.value)}
