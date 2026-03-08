@@ -88,7 +88,8 @@ function createProjectsTable({ existingIds = [], rows = [] } = {}) {
         in: vi.fn().mockResolvedValue({ error: null })
       })
     }),
-    upsert: vi.fn().mockResolvedValue({ error: null })
+    upsert: vi.fn().mockResolvedValue({ error: null }),
+    insert: vi.fn().mockResolvedValue({ error: null })
   };
 }
 
@@ -920,7 +921,11 @@ describe('API', () => {
         theme: 'Climate',
         description: 'Maps urban heat islands.',
         tech_stack: ['Vite', 'Supabase']
-      },
+      }
+    ], {
+      onConflict: 'id'
+    });
+    expect(projectsTable.insert).toHaveBeenCalledWith([
       {
         user_id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
         name: 'Pulse',
@@ -928,8 +933,6 @@ describe('API', () => {
         description: 'Live team coordination board.',
         tech_stack: ['Node.js', 'Express']
       }
-    ], {
-      onConflict: 'id'
-    });
+    ]);
   });
 });

@@ -219,9 +219,12 @@ export async function syncProjects(client, userId, projects) {
     }
   }
 
-  if (normalizedProjects.length) {
-    const rows = normalizedProjects.map((project) => ({
-      ...(project.id ? { id: project.id } : {}),
+  const existingProjects = normalizedProjects.filter((project) => project.id);
+  const newProjects = normalizedProjects.filter((project) => !project.id);
+
+  if (existingProjects.length) {
+    const rows = existingProjects.map((project) => ({
+      id: project.id,
       user_id: userId,
       name: project.name,
       theme: project.theme,
@@ -231,6 +234,23 @@ export async function syncProjects(client, userId, projects) {
     const { error } = await client
       .from('projects')
       .upsert(rows, { onConflict: 'id' });
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  if (newProjects.length) {
+    const rows = newProjects.map((project) => ({
+      user_id: userId,
+      name: project.name,
+      theme: project.theme,
+      description: project.description,
+      tech_stack: project.techStack
+    }));
+    const { error } = await client
+      .from('projects')
+      .insert(rows);
 
     if (error) {
       throw error;
