@@ -9,8 +9,8 @@ export function ProtectedRoute() {
     return (
       <div className="shell shell--centered">
         <div className="card card--ghost">
-          <p className="eyebrow">Loading</p>
-          <h1>Restoring your session.</h1>
+          <p style={{ fontFamily: 'serif' }} className="eyebrow">Loading</p>
+          <h1 style={{ fontFamily: 'serif' }}>Restoring your session.</h1>
         </div>
       </div>
     );

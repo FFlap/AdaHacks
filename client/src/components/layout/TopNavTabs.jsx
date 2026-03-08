@@ -34,7 +34,7 @@ export default function TopNavTabs() {
   const { unreadCount } = useNotifications();
   const [fetchedHasUnlockedTabs, setFetchedHasUnlockedTabs] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState(null);
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 900px)");
   const hasUnlockedTabs = cachedMe?.profile
     ? hasProfileAccessRequirements(cachedMe.profile)
     : fetchedHasUnlockedTabs;
@@ -109,14 +109,7 @@ export default function TopNavTabs() {
   return (
     <>
       {isMobile ? (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "flex-end",
-            width: "100%",
-            mb: 2,
-          }}
-        >
+        <Box sx={{ display: "flex" }}>
           <Paper
             elevation={0}
             sx={{

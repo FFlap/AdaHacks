@@ -20,6 +20,7 @@ export default function SwipeCardMotion({
     <motion.div
       drag={isTop ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={1}
       onDragEnd={isTop ? (event, info) => onDragEnd(event, info, item) : undefined}
       style={{
         x,
@@ -29,6 +30,7 @@ export default function SwipeCardMotion({
         width: "100%",
         borderRadius: "24px",
         cursor: isTop ? "grab" : "default",
+        touchAction: "none",
       }}
       initial={{ scale: 0.95, y: 12, opacity: 0 }}
       animate={{
