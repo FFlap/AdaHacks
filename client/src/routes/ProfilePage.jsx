@@ -331,6 +331,11 @@ export function ProfilePage() {
       setForm(mapProfileToForm(response.profile));
       setAvatarFile(null);
       setSkillInput('');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('profile-updated', {
+          detail: response.profile
+        }));
+      }
       startTransition(() => {
         setNotice('Profile saved.');
       });
