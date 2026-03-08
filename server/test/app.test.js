@@ -14,6 +14,14 @@ function createMockSupabaseClient(overrides = {}) {
 
 function createProfilesTable(profileRow) {
   return {
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: profileRow,
+          error: null
+        })
+      })
+    }),
     upsert: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
         single: vi.fn().mockResolvedValue({
@@ -241,6 +249,76 @@ describe('API', () => {
         techStack: ['Vite', 'Supabase']
       }
     ]);
+    expect(profilesTable.upsert).not.toHaveBeenCalled();
+  });
+
+  it('creates a profile on read only when the profile row is missing', async () => {
+    const authClient = createMockSupabaseClient();
+    authClient.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+          email: 'ada@example.com'
+        }
+      },
+      error: null
+    });
+
+    const insertedProfileRow = {
+      id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620',
+      full_name: '',
+      bio: '',
+      avatar_path: null,
+      contact_links: {},
+      skills: [],
+      created_at: '2026-03-07T18:00:00.000Z',
+      updated_at: '2026-03-07T18:00:00.000Z'
+    };
+    const profilesTable = {
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: null,
+            error: null
+          })
+        })
+      }),
+      upsert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: insertedProfileRow,
+            error: null
+          })
+        })
+      })
+    };
+    const projectsTable = createProjectsTable();
+    const requestClient = {
+      from: vi.fn((table) => {
+        if (table === 'profiles') {
+          return profilesTable;
+        }
+
+        if (table === 'projects') {
+          return projectsTable;
+        }
+
+        throw new Error(`Unexpected table: ${table}`);
+      })
+    };
+
+    const app = createApp({
+      env,
+      authClientFactory: () => authClient,
+      requestClientFactory: () => requestClient
+    });
+
+    const response = await request(app)
+      .get('/api/v1/me')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(response.status).toBe(200);
+    expect(profilesTable.upsert).toHaveBeenCalledWith({ id: '34cd1065-d6c8-4f3d-b1dc-d6ee5ca28620' }, { onConflict: 'id' });
   });
 
   it('returns a discoverable projects feed for authenticated users', async () => {

@@ -576,6 +576,10 @@ h2 {
   top: 24px;
 }
 
+.profile-side--skeleton {
+  position: static;
+}
+
 .profile-side__identity {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -638,6 +642,85 @@ h2 {
   margin-top: 4px;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.profile-skeleton-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.88) 8%, rgba(255, 255, 255, 0.36) 18%, rgba(255, 255, 255, 0.88) 33%),
+    linear-gradient(135deg, rgba(37, 65, 86, 0.08), rgba(37, 65, 86, 0.12));
+  background-size: 220% 100%, 100% 100%;
+  animation: profile-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.profile-skeleton--avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 28px;
+}
+
+.profile-skeleton--title {
+  width: min(240px, 72%);
+  height: 24px;
+}
+
+.profile-skeleton--line {
+  height: 12px;
+}
+
+.profile-skeleton--line-short {
+  width: min(140px, 48%);
+}
+
+.profile-skeleton--line-medium {
+  width: min(220px, 68%);
+}
+
+.profile-skeleton--chip {
+  width: 88px;
+  height: 40px;
+  border-radius: 999px;
+}
+
+.profile-skeleton--chip-wide {
+  width: 132px;
+}
+
+.profile-skeleton--button {
+  width: 100%;
+  height: 52px;
+  border-radius: 999px;
+}
+
+.profile-skeleton--button-inline {
+  width: 144px;
+}
+
+.profile-skeleton--input {
+  width: 100%;
+  height: 52px;
+}
+
+.profile-skeleton--textarea {
+  width: 100%;
+  height: 148px;
+}
+
+@keyframes profile-skeleton-shimmer {
+  0% {
+    background-position: 100% 0, 0 0;
+  }
+
+  100% {
+    background-position: -100% 0, 0 0;
+  }
 }
 
 .sr-only {

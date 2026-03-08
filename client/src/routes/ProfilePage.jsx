@@ -1,6 +1,6 @@
 import { startTransition, useEffect, useEffectEvent, useState } from 'react';
 import AppShell from '../components/layout/AppShell.jsx';
-import { getMe, updateProfile } from '../lib/api.js';
+import { updateProfile } from '../lib/api.js';
 import { avatarAccept, uploadAvatar, validateAvatarFile } from '../lib/profileMedia.js';
 import { useAuth } from '../context/useAuth.js';
 
@@ -13,6 +13,16 @@ const emptyContactLinks = {
   email: '',
   phone: ''
 };
+
+function createEmptyFormState() {
+  return {
+    fullName: '',
+    bio: '',
+    contactLinks: emptyContactLinks,
+    skills: [],
+    projects: []
+  };
+}
 
 function newProjectKey() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -94,25 +104,130 @@ function toContactLinksPayload(contactLinks) {
   }, {});
 }
 
+function SkeletonBlock({ className = '' }) {
+  return <div aria-hidden="true" className={`profile-skeleton ${className}`.trim()} />;
+}
+
+function ProfileSidebarSkeleton() {
+  return (
+    <aside className="card profile-side profile-side--skeleton" data-testid="profile-skeleton">
+      <div className="profile-side__identity">
+        <SkeletonBlock className="profile-skeleton--avatar" />
+        <div className="profile-skeleton-stack">
+          <SkeletonBlock className="profile-skeleton--title" />
+          <SkeletonBlock className="profile-skeleton--line profile-skeleton--line-short" />
+        </div>
+      </div>
+
+      <div className="profile-side__skills" aria-hidden="true">
+        <SkeletonBlock className="profile-skeleton--chip" />
+        <SkeletonBlock className="profile-skeleton--chip" />
+        <SkeletonBlock className="profile-skeleton--chip profile-skeleton--chip-wide" />
+      </div>
+
+      <section className="profile-side__projects">
+        <p className="profile-side__section-label">Projects</p>
+        <div className="profile-side__project-list" aria-hidden="true">
+          <div className="profile-side__project">
+            <SkeletonBlock className="profile-skeleton--line profile-skeleton--line-medium" />
+            <SkeletonBlock className="profile-skeleton--line profile-skeleton--line-short" />
+          </div>
+          <div className="profile-side__project">
+            <SkeletonBlock className="profile-skeleton--line profile-skeleton--line-medium" />
+            <SkeletonBlock className="profile-skeleton--line profile-skeleton--line-short" />
+          </div>
+        </div>
+      </section>
+
+      <dl className="meta-list" aria-hidden="true">
+        <div>
+          <dt>Profile created</dt>
+          <dd><SkeletonBlock className="profile-skeleton--line profile-skeleton--line-medium" /></dd>
+        </div>
+        <div>
+          <dt>Last update</dt>
+          <dd><SkeletonBlock className="profile-skeleton--line profile-skeleton--line-medium" /></dd>
+        </div>
+      </dl>
+
+      <SkeletonBlock className="profile-skeleton--button" />
+    </aside>
+  );
+}
+
+function ProfileEditorSkeleton() {
+  return (
+    <div className="card profile-main" data-testid="profile-skeleton-editor">
+      <div aria-hidden="true" className="editor-tabs">
+        <div className="editor-tab is-active">Profile</div>
+        <div className="editor-tab">Projects</div>
+      </div>
+
+      <div className="editor-panel">
+        <section className="profile-section">
+          <div className="avatar-field" aria-hidden="true">
+            <SkeletonBlock className="profile-skeleton--avatar" />
+            <div className="profile-skeleton-stack">
+              <SkeletonBlock className="profile-skeleton--line profile-skeleton--line-medium" />
+              <SkeletonBlock className="profile-skeleton--button profile-skeleton--button-inline" />
+            </div>
+          </div>
+        </section>
+
+        <div className="field">
+          <span>Full name</span>
+          <SkeletonBlock className="profile-skeleton--input" />
+        </div>
+
+        <div className="field">
+          <span>Tech stack &amp; frameworks</span>
+          <div className="skill-composer" aria-hidden="true">
+            <SkeletonBlock className="profile-skeleton--input" />
+            <SkeletonBlock className="profile-skeleton--button profile-skeleton--button-inline" />
+          </div>
+          <div className="chip-list" aria-hidden="true">
+            <SkeletonBlock className="profile-skeleton--chip" />
+            <SkeletonBlock className="profile-skeleton--chip" />
+            <SkeletonBlock className="profile-skeleton--chip profile-skeleton--chip-wide" />
+          </div>
+        </div>
+
+        <div className="field">
+          <span>Bio</span>
+          <SkeletonBlock className="profile-skeleton--textarea" />
+        </div>
+
+        <section className="profile-section">
+          <div className="field-grid" aria-hidden="true">
+            <SkeletonBlock className="profile-skeleton--input" />
+            <SkeletonBlock className="profile-skeleton--input" />
+            <SkeletonBlock className="profile-skeleton--input" />
+            <SkeletonBlock className="profile-skeleton--input" />
+          </div>
+        </section>
+
+        <SkeletonBlock className="profile-skeleton--button" />
+      </div>
+    </div>
+  );
+}
+
 export function ProfilePage() {
-  const { session, signOut } = useAuth();
+  const { session, signOut, cachedMe, setCachedMe, refreshCachedMe } = useAuth();
   const [activeEditorTab, setActiveEditorTab] = useState('profile');
-  const [data, setData] = useState(null);
-  const [form, setForm] = useState({
-    fullName: '',
-    bio: '',
-    contactLinks: emptyContactLinks,
-    skills: [],
-    projects: []
-  });
+  const [data, setData] = useState(() => cachedMe);
+  const [form, setForm] = useState(() => (
+    cachedMe?.profile ? mapProfileToForm(cachedMe.profile) : createEmptyFormState()
+  ));
   const [skillInput, setSkillInput] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loadState, setLoadState] = useState(() => (cachedMe ? 'refreshing' : 'initial-loading'));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [avatarNotice, setAvatarNotice] = useState('');
+  const isInitialLoading = !data && loadState === 'initial-loading';
 
   const liveAvatarUrl = avatarPreviewUrl || data?.profile.avatarUrl || '';
   const displayName = form.fullName || data?.profile.fullName || '';
@@ -137,11 +252,12 @@ export function ProfilePage() {
       return;
     }
 
-    setLoading(true);
+    const hasExistingData = Boolean(data ?? cachedMe);
+    setLoadState(hasExistingData ? 'refreshing' : 'initial-loading');
     setError('');
 
     try {
-      const response = await getMe(session.access_token);
+      const response = await refreshCachedMe({ force: true });
       setData(response);
       setForm(mapProfileToForm(response.profile));
       setSkillInput('');
@@ -155,7 +271,7 @@ export function ProfilePage() {
 
       setError(loadError.message);
     } finally {
-      setLoading(false);
+      setLoadState('idle');
     }
   });
 
@@ -329,6 +445,7 @@ export function ProfilePage() {
       const response = await updateProfile(session.access_token, payload);
       setData(response);
       setForm(mapProfileToForm(response.profile));
+      setCachedMe(response);
       setAvatarFile(null);
       setSkillInput('');
       if (typeof window !== 'undefined') {
@@ -355,10 +472,11 @@ export function ProfilePage() {
     <AppShell>
       <div className="shell">
         <section className="profile-layout">
-          <aside className="card profile-side">
-            <div className="profile-side__identity">
-              <div className="profile-side__avatar" aria-hidden="true">
-                {liveAvatarUrl ? <img alt="" src={liveAvatarUrl} /> : <span>{initials}</span>}
+          {isInitialLoading ? <ProfileSidebarSkeleton /> : (
+            <aside className="card profile-side">
+              <div className="profile-side__identity">
+                <div className="profile-side__avatar" aria-hidden="true">
+                  {liveAvatarUrl ? <img alt="" src={liveAvatarUrl} /> : <span>{initials}</span>}
               </div>
               <div>
                 <p className="profile-side__name">{displayName || 'Complete your profile'}</p>
@@ -404,8 +522,10 @@ export function ProfilePage() {
             <button className="button button--secondary" type="button" onClick={() => signOut()}>
               Sign out
             </button>
-          </aside>
-          <div className="card profile-main">
+            </aside>
+          )}
+          {isInitialLoading ? <ProfileEditorSkeleton /> : (
+            <div className="card profile-main">
             <div aria-label="Profile editor sections" className="editor-tabs" role="tablist">
               <button
                 aria-controls="profile-panel"
@@ -430,10 +550,8 @@ export function ProfilePage() {
                 Projects
               </button>
             </div>
-        
-            {loading ? (
-              <div className="loading-panel">Pulling profile data from the API.</div>
-            ) : (
+
+            {(
               <form className="stack" onSubmit={handleSubmit}>
                 {activeEditorTab === 'profile' ? (
                   <div
@@ -755,7 +873,8 @@ export function ProfilePage() {
                 </button>
               </form>
             )}
-          </div>
+            </div>
+          )}
         </section>
       </div>
     </AppShell>

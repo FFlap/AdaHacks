@@ -73,6 +73,20 @@ export function mapProjectRow(row) {
 }
 
 export async function ensureProfile(client, userId, supabaseUrl) {
+  const { data: existingProfile, error: selectError } = await client
+    .from('profiles')
+    .select(profileColumns)
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (selectError) {
+    throw selectError;
+  }
+
+  if (existingProfile) {
+    return mapProfileRow(existingProfile, supabaseUrl);
+  }
+
   const { data, error } = await client
     .from('profiles')
     .upsert({ id: userId }, { onConflict: 'id' })
