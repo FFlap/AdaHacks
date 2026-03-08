@@ -325,8 +325,6 @@ export function ProfilePage() {
       <div className="shell">
         <section className="profile-layout">
           <aside className="card profile-side">
-            <p className="brand-mark">AdaHacks</p>
-            <p className="eyebrow">Session boundary</p>
             <div className="profile-side__identity">
               <div className="profile-side__avatar" aria-hidden="true">
                 {liveAvatarUrl ? <img alt="" src={liveAvatarUrl} /> : <span>{initials}</span>}
@@ -401,13 +399,7 @@ export function ProfilePage() {
                 Projects
               </button>
             </div>
-            <p className="eyebrow">Profile</p>
-            <h2>{activeEditorTab === 'profile' ? 'Profile details' : 'Project list'}</h2>
-            <p className="lede">
-              {activeEditorTab === 'profile'
-                ? 'Add your avatar, write a short bio, and keep one clean list for your stack.'
-                : 'Keep project entries separate from the base profile so the editor stays easier to scan.'}
-            </p>
+        
             {loading ? (
               <div className="loading-panel">Pulling profile data from the API.</div>
             ) : (
