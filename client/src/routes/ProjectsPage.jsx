@@ -4,7 +4,6 @@ import AppShell from '../components/layout/AppShell.jsx';
 import ProjectAnalysisDialog from '../components/swipe/ProjectAnalysisDialog.jsx';
 import SwipeDeck from '../components/swipe/SwipeDeck';
 import ProjectSwipeCard from '../components/swipe/ProjectSwipeCard';
-import SwipeActionButtons from '../components/swipe/SwipeActionButtons';
 import { useAuth } from '../context/useAuth.js';
 import { analyzeProject, createSwipe, getProjectsFeed } from '../lib/api.js';
 
@@ -141,20 +140,6 @@ export default function ProjectsPage() {
     openProjectAnalysis(analysisState.project, { force: true });
   };
 
-  const handlePass = () => {
-    if (currentIndex < projects.length) {
-      handleSwipe('left', projects[currentIndex]);
-      setCurrentIndex((prev) => prev + 1);
-    }
-  };
-
-  const handleLike = () => {
-    if (currentIndex < projects.length) {
-      handleSwipe('right', projects[currentIndex]);
-      setCurrentIndex((prev) => prev + 1);
-    }
-  };
-
   return (
     <AppShell>
       <Box sx={{ p: 4 }}>
@@ -181,8 +166,6 @@ export default function ProjectsPage() {
             currentIndex={currentIndex}
             setCurrentIndex={setCurrentIndex}
             onSwipe={handleSwipe}
-            onPass={handlePass}
-            onLike={handleLike}
             renderCard={(project) => (
               <ProjectSwipeCard
                 project={project}

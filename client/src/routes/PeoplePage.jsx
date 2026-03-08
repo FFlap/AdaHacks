@@ -1,7 +1,6 @@
 import { useEffect, useEffectEvent, useState } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import AppShell from '../components/layout/AppShell.jsx';
-import SwipeActionButtons from '../components/swipe/SwipeActionButtons';
 import SwipeDeck from '../components/swipe/SwipeDeck';
 import PersonSwipeCard from '../components/swipe/PersonSwipeCard.jsx';
 import { useAuth } from '../context/useAuth.js';
@@ -66,20 +65,6 @@ export default function PeoplePage() {
     void persistSwipe(direction, person);
   };
 
-  const handlePass = () => {
-    if (currentIndex < people.length) {
-      handleSwipe('left', people[currentIndex]);
-      setCurrentIndex((prev) => prev + 1);
-    }
-  };
-
-  const handleLike = () => {
-    if (currentIndex < people.length) {
-      handleSwipe('right', people[currentIndex]);
-      setCurrentIndex((prev) => prev + 1);
-    }
-  };
-
   return (
     <AppShell>
       <Box sx={{ p: 4 }}>
@@ -106,8 +91,6 @@ export default function PeoplePage() {
             currentIndex={currentIndex}
             setCurrentIndex={setCurrentIndex}
             onSwipe={handleSwipe}
-            onPass={handlePass}
-            onLike={handleLike}
             renderCard={(person) => (
               <PersonSwipeCard person={person} />
             )}
