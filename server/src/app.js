@@ -4,13 +4,19 @@ import helmet from 'helmet';
 import {
   errorResponseSchema,
   meResponseSchema,
+  peopleFeedSchema,
+  projectAnalysisSchema,
+  projectFeedSchema,
   updateProfileInputSchema
 } from '@adahacks/shared/contracts';
 import { getEnv } from './env.js';
 import { HttpError, toErrorResponse } from './errors.js';
+import { createOpenRouterClient } from './openrouter.js';
 import {
-  ensureProfile,
-  listProjects,
+  findDiscoverableProject,
+  listDiscoverablePeople,
+  listDiscoverableProjects,
+  loadProfileWithProjects,
   mapProfileRow,
   normalizeSkills,
   profileColumns,
@@ -52,9 +58,11 @@ function extractBearerToken(header = '') {
 export function createApp({
   env = getEnv(),
   authClientFactory = createAuthClient,
-  requestClientFactory = createRequestClient
+  requestClientFactory = createRequestClient,
+  analysisClientFactory = createOpenRouterClient
 } = {}) {
   const app = express();
+  const analysisClient = analysisClientFactory(env);
 
   app.use(helmet());
   app.use(cors({
@@ -98,8 +106,7 @@ export function createApp({
     try {
       const { user } = request.auth;
       const client = request.supabase;
-      const profile = await ensureProfile(client, user.id, env.supabaseUrl);
-      profile.projects = await listProjects(client, user.id);
+      const profile = await loadProfileWithProjects(client, user.id, env.supabaseUrl);
       const payload = meResponseSchema.parse({
         user: {
           id: user.id,
@@ -107,6 +114,61 @@ export function createApp({
         },
         profile
       });
+
+      response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/v1/projects/:projectId/analysis', async (request, response, next) => {
+    try {
+      const { projectId } = request.params;
+      const { user } = request.auth;
+      const client = request.supabase;
+      const viewer = await loadProfileWithProjects(client, user.id, env.supabaseUrl);
+      const project = await findDiscoverableProject(client, env.supabaseUrl, projectId);
+
+      if (!project) {
+        throw new HttpError(404, 'Project not found', 'project_not_found');
+      }
+
+      let analysis;
+
+      try {
+        analysis = await analysisClient.analyzeProject({ viewer, project });
+      } catch {
+        throw new HttpError(502, 'Project analysis is unavailable right now', 'analysis_unavailable');
+      }
+
+      response.json(projectAnalysisSchema.parse({
+        ...analysis,
+        projectId
+      }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/v1/projects', async (request, response, next) => {
+    try {
+      const client = request.supabase;
+      const payload = projectFeedSchema.parse(
+        await listDiscoverableProjects(client, env.supabaseUrl)
+      );
+
+      response.json(payload);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/v1/people', async (request, response, next) => {
+    try {
+      const client = request.supabase;
+      const payload = peopleFeedSchema.parse(
+        await listDiscoverablePeople(client, env.supabaseUrl)
+      );
 
       response.json(payload);
     } catch (error) {

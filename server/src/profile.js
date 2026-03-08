@@ -71,6 +71,28 @@ export async function ensureProfile(client, userId, supabaseUrl) {
   return mapProfileRow(data, supabaseUrl);
 }
 
+export async function loadProfileWithProjects(client, userId, supabaseUrl) {
+  const profile = await ensureProfile(client, userId, supabaseUrl);
+  profile.projects = await listProjects(client, userId);
+  return profile;
+}
+
+function toDisplayName(fullName, email) {
+  const normalizedName = fullName?.trim();
+
+  if (normalizedName) {
+    return normalizedName;
+  }
+
+  const localPart = email?.split('@')[0]?.trim();
+
+  if (localPart) {
+    return localPart;
+  }
+
+  return 'Anonymous builder';
+}
+
 export async function listProjects(client, userId) {
   const { data, error } = await client
     .from('projects')
@@ -83,6 +105,66 @@ export async function listProjects(client, userId) {
   }
 
   return data.map(mapProjectRow);
+}
+
+export function mapProjectFeedRow(row, supabaseUrl) {
+  return {
+    id: row.id,
+    name: row.name,
+    theme: row.theme,
+    description: row.description,
+    techStack: normalizeSkills(row.tech_stack ?? []),
+    owner: {
+      id: row.owner_id,
+      fullName: toDisplayName(row.owner_full_name, row.owner_email),
+      avatarUrl: getAvatarUrl(supabaseUrl, row.owner_avatar_path)
+    }
+  };
+}
+
+export async function listDiscoverableProjects(client, supabaseUrl) {
+  const { data, error } = await client.rpc('list_discoverable_projects');
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map((row) => mapProjectFeedRow(row, supabaseUrl));
+}
+
+export async function findDiscoverableProject(client, supabaseUrl, projectId) {
+  const projects = await listDiscoverableProjects(client, supabaseUrl);
+  return projects.find((project) => project.id === projectId) ?? null;
+}
+
+function mapPeopleProjectSummary(project = {}) {
+  return {
+    id: project.id,
+    name: project.name,
+    theme: project.theme ?? ''
+  };
+}
+
+export function mapPeopleFeedRow(row, supabaseUrl) {
+  return {
+    id: row.id,
+    fullName: toDisplayName(row.full_name, row.email),
+    avatarUrl: getAvatarUrl(supabaseUrl, row.avatar_path),
+    bio: row.bio ?? '',
+    skills: normalizeSkills(row.skills ?? []),
+    createdAt: row.created_at,
+    projects: (row.projects ?? []).map(mapPeopleProjectSummary)
+  };
+}
+
+export async function listDiscoverablePeople(client, supabaseUrl) {
+  const { data, error } = await client.rpc('list_discoverable_people');
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map((row) => mapPeopleFeedRow(row, supabaseUrl));
 }
 
 export async function syncProjects(client, userId, projects) {

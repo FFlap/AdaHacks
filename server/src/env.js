@@ -13,6 +13,8 @@ export function getEnv(source = process.env) {
     port: Number(source.PORT ?? 4010),
     clientOrigin: required(source, 'CLIENT_ORIGIN'),
     supabaseUrl: required(source, 'SUPABASE_URL'),
-    supabasePublishableKey: required(source, 'SUPABASE_PUBLISHABLE_KEY')
+    supabasePublishableKey: required(source, 'SUPABASE_PUBLISHABLE_KEY'),
+    openRouterApiKey: required(source, 'OPENROUTER_API_KEY'),
+    openRouterModel: required(source, 'OPENROUTER_MODEL')
   };
 }
